@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, watch } from 'vue'
 import GridCell from './GridCell.vue'
 
 type Color = string
@@ -19,9 +19,13 @@ const defaultGrid = computed(() => {
 
 // Use provided grid or fall back to default
 const currentGrid = computed(() => {
+  console.log('CanvasGrid: props.grid:', props.grid)
+  console.log('CanvasGrid: props.grid.length:', props.grid?.length)
   if (!props.grid || props.grid.length === 0) {
+    console.log('CanvasGrid: Using default gray grid')
     return defaultGrid.value
   }
+  console.log('CanvasGrid: Using provided grid')
   return props.grid
 })
 
@@ -34,7 +38,9 @@ const gridDimensions = computed(() => {
 
 // Flatten grid for easy iteration
 const flattenedGrid = computed(() => {
-  return currentGrid.value.flat()
+  const flattened = currentGrid.value.flat()
+  console.log('CanvasGrid: flattenedGrid:', flattened)
+  return flattened
 })
 
 // Grid label for accessibility
@@ -42,6 +48,13 @@ const gridLabel = computed(() => {
   const { rows, cols } = gridDimensions.value
   return `Canvas grid ${cols}x${rows}`
 })
+
+// Debug: Watch for prop changes
+watch(() => props.grid, (newGrid, oldGrid) => {
+  console.log('CanvasGrid: props.grid changed!')
+  console.log('CanvasGrid: oldGrid:', oldGrid)
+  console.log('CanvasGrid: newGrid:', newGrid)
+}, { deep: true })
 </script>
 
 <template>
@@ -54,11 +67,13 @@ const gridLabel = computed(() => {
       '--grid-rows': gridDimensions.rows.toString()
     }"
   >
+
     <div class="grid-container">
       <GridCell
         v-for="(color, index) in flattenedGrid"
-        :key="index"
+        :key="`cell-${index}-${color}`"
         :color="color"
+        :data-debug="`index-${index}-color-${color}`"
       />
     </div>
   </div>

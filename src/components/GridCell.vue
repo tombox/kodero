@@ -3,21 +3,27 @@ interface Props {
   color?: string
 }
 
-const { color = 'gray' } = defineProps<Props>()
+const { color = '' } = defineProps<Props>()
+
+// Use gray as fallback for empty cells
+const displayColor = (color && color.trim() !== '') ? color : '#f0f0f0'
+console.log('GridCell: color prop =', JSON.stringify(color), 'displayColor =', displayColor)
+console.log('GridCell: color truthy?', !!color, 'color length:', color?.length)
+console.log('GridCell: empty class will be applied:', !color || color.trim() === '')
 </script>
 
 <template>
   <div
     class="grid-cell"
     role="gridcell"
-    :aria-label="`Grid cell with color ${color}`"
-    :style="{ '--cell-color': color }"
+    :aria-label="`Grid cell with color ${color || 'empty'}`"
+    :style="{ backgroundColor: displayColor }"
+    :class="{ empty: !color || color.trim() === '' }"
   />
 </template>
 
 <style scoped>
 .grid-cell {
-  background-color: var(--cell-color);
   border: 2px solid #333;
   border-radius: 4px;
   aspect-ratio: 1;
@@ -30,4 +36,11 @@ const { color = 'gray' } = defineProps<Props>()
   border-color: #666;
   transform: scale(1.02);
 }
+
+.grid-cell.empty {
+  background-color: #f0f0f0;
+  border-color: #ddd;
+  opacity: 0.7;
+}
+
 </style>

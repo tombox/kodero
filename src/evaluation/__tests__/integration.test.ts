@@ -107,8 +107,8 @@ describe('Parser + Evaluator Integration', () => {
       expect(evalResult.success).toBe(false)
       expect(evalResult.errors).toHaveLength(4) // One per grid cell
       expect(evalResult.grid).toEqual([
-        ['gray', 'gray'],
-        ['gray', 'gray']
+        ['', ''],
+        ['', '']
       ])
     })
 

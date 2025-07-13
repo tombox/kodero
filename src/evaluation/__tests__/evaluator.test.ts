@@ -145,7 +145,7 @@ describe('CodeEvaluator', () => {
 
       expect(result.success).toBe(false)
       expect(result.errors).toHaveLength(2) // One error per cell
-      expect(result.grid).toEqual([['gray', 'gray']]) // Falls back to default
+      expect(result.grid).toEqual([['', '']]) // Falls back to default empty
     })
   })
 

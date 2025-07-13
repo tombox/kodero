@@ -53,14 +53,14 @@ export class EvaluationService {
   }
 
   /**
-   * Create a default gray grid for fallback cases
+   * Create a default empty grid for fallback cases
    */
   private createDefaultGrid(gridSize: { width: number; height: number }): string[][] {
     const grid: string[][] = []
     for (let y = 0; y < gridSize.height; y++) {
       grid[y] = []
       for (let x = 0; x < gridSize.width; x++) {
-        grid[y][x] = 'gray'
+        grid[y][x] = '' // Empty string for light gray empty cells
       }
     }
     return grid

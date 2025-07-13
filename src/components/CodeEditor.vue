@@ -399,30 +399,6 @@ defineExpose({
     class="code-editor"
     :class="{ 'code-editor--disabled': disabled }"
   >
-    <div class="code-editor__header">
-      <h3 class="code-editor__title">
-        Code Editor
-      </h3>
-      <div class="code-editor__actions">
-        <button 
-          :disabled="disabled || allLines.length >= maxLines"
-          class="code-editor__btn code-editor__btn--add"
-          title="Add line"
-          @click="addLine()"
-        >
-          + Add Line
-        </button>
-        <button 
-          :disabled="disabled"
-          class="code-editor__btn code-editor__btn--execute"
-          title="Execute code"
-          @click="executeCode"
-        >
-          ▶ Run
-        </button>
-      </div>
-    </div>
-
     <div class="code-editor__body">
       <!-- Unified line structure with auto-indenting -->
       <div
@@ -481,62 +457,9 @@ defineExpose({
   pointer-events: none;
 }
 
-.code-editor__header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 16px;
-  background-color: #e9ecef;
-  border-bottom: 1px solid #dee2e6;
-}
-
-.code-editor__title {
-  margin: 0;
-  font-size: 16px;
-  font-weight: 600;
-  color: #495057;
-}
-
-.code-editor__actions {
-  display: flex;
-  gap: 8px;
-}
-
-.code-editor__btn {
-  padding: 6px 12px;
-  border: none;
-  border-radius: 6px;
-  font-size: 12px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.code-editor__btn--add {
-  background-color: #28a745;
-  color: white;
-}
-
-.code-editor__btn--add:hover:not(:disabled) {
-  background-color: #218838;
-}
-
-.code-editor__btn--execute {
-  background-color: #007aff;
-  color: white;
-}
-
-.code-editor__btn--execute:hover:not(:disabled) {
-  background-color: #0056b3;
-}
-
-.code-editor__btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
 
 .code-editor__body {
-  padding: 16px;
+  padding: 4px;
 }
 
 .code-lines {
@@ -624,16 +547,6 @@ defineExpose({
 
 /* Responsive design */
 @media (max-width: 768px) {
-  .code-editor__header {
-    flex-direction: column;
-    gap: 8px;
-    align-items: stretch;
-  }
-  
-  .code-editor__actions {
-    justify-content: center;
-  }
-  
   .code-line {
     flex-direction: column;
     align-items: stretch;
@@ -641,7 +554,7 @@ defineExpose({
   }
   
   .code-line__slots {
-    justify-content: center;
+    justify-content: flex-start;
     flex-wrap: wrap;
   }
   

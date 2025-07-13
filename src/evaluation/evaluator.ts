@@ -52,8 +52,8 @@ export class CodeEvaluator {
             message: error instanceof Error ? error.message : 'Unknown runtime error',
             type: 'runtime'
           })
-          // Use default color for error cells
-          grid[y][x] = 'gray'
+          // Use empty string for error cells (shows as light gray)
+          grid[y][x] = ''
         }
       }
     }

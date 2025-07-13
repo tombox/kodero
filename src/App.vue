@@ -4,12 +4,6 @@ import { RouterView } from 'vue-router'
 
 <template>
   <div id="app">
-    <header>
-      <nav>
-        <h1>Kodero</h1>
-      </nav>
-    </header>
-
     <main>
       <RouterView />
     </main>
@@ -36,6 +30,5 @@ nav h1 {
 
 main {
   flex: 1;
-  padding: 2rem;
 }
 </style>
