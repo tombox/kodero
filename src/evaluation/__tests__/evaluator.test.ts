@@ -5,6 +5,8 @@ import type {
   AssignmentNode, 
   LiteralNode, 
   VariableNode,
+  ConditionalNode,
+  BinaryOperationNode,
   EvaluationResult
 } from '../ast-types'
 
@@ -31,15 +33,15 @@ describe('CodeEvaluator', () => {
       expect(result.errors).toHaveLength(0)
     })
 
-    it('should evaluate with default gray when no p assignment', () => {
+    it('should evaluate with default empty string when no p assignment', () => {
       const ast = createProgramAST([])
 
       const result = evaluator.evaluate(ast, { width: 2, height: 2 })
 
       expect(result.success).toBe(true)
       expect(result.grid).toEqual([
-        ['gray', 'gray'],
-        ['gray', 'gray']
+        ['', ''],
+        ['', '']
       ])
     })
 
@@ -222,6 +224,124 @@ describe('CodeEvaluator', () => {
     })
   })
 
+  describe('Conditional Evaluation', () => {
+    it('should evaluate simple if condition: if x == 2 then p = blue', () => {
+      const ast = createProgramAST([
+        createConditionalAST(
+          createBinaryOperationAST('==', createVariableAST('x'), createLiteralAST(2, 'number')),
+          [createAssignmentAST('p', createLiteralAST('blue', 'color'))]
+        )
+      ])
+
+      const result = evaluator.evaluate(ast, { width: 5, height: 3 })
+
+      expect(result.success).toBe(true)
+      expect(result.grid).toBeDefined()
+      
+      // Only x=2 columns should be blue, others should be default
+      expect(result.grid![0][2]).toBe('blue') // y=0, x=2
+      expect(result.grid![1][2]).toBe('blue') // y=1, x=2
+      expect(result.grid![2][2]).toBe('blue') // y=2, x=2
+      
+      // Other columns should be default (empty or transparent)
+      expect(result.grid![0][0]).toBe('')  // y=0, x=0
+      expect(result.grid![0][1]).toBe('')  // y=0, x=1
+      expect(result.grid![0][3]).toBe('')  // y=0, x=3
+    })
+
+    it('should evaluate if condition with different comparison operators', () => {
+      const operators = [
+        { op: '<', x: 1, shouldMatch: [0] },
+        { op: '>', x: 3, shouldMatch: [4] },
+        { op: '<=', x: 2, shouldMatch: [0, 1, 2] },
+        { op: '>=', x: 2, shouldMatch: [2, 3, 4] },
+        { op: '!=', x: 2, shouldMatch: [0, 1, 3, 4] }
+      ]
+
+      operators.forEach(({ op, x, shouldMatch }) => {
+        const ast = createProgramAST([
+          createConditionalAST(
+            createBinaryOperationAST(op as BinaryOperationNode['operator'], createVariableAST('x'), createLiteralAST(x, 'number')),
+            [createAssignmentAST('p', createLiteralAST('red', 'color'))]
+          )
+        ])
+
+        const result = evaluator.evaluate(ast, { width: 5, height: 1 })
+        expect(result.success).toBe(true)
+        
+        // Check that only expected x coordinates match
+        for (let i = 0; i < 5; i++) {
+          if (shouldMatch.includes(i)) {
+            expect(result.grid![0][i]).toBe('red')
+          } else {
+            expect(result.grid![0][i]).toBe('')
+          }
+        }
+      })
+    })
+
+    it('should evaluate if condition with y coordinate: if y < 2 then p = green', () => {
+      const ast = createProgramAST([
+        createConditionalAST(
+          createBinaryOperationAST('<', createVariableAST('y'), createLiteralAST(2, 'number')),
+          [createAssignmentAST('p', createLiteralAST('green', 'color'))]
+        )
+      ])
+
+      const result = evaluator.evaluate(ast, { width: 3, height: 4 })
+
+      expect(result.success).toBe(true)
+      
+      // Only y=0 and y=1 rows should be green
+      expect(result.grid![0]).toEqual(['green', 'green', 'green'])
+      expect(result.grid![1]).toEqual(['green', 'green', 'green'])
+      expect(result.grid![2]).toEqual(['', '', ''])
+      expect(result.grid![3]).toEqual(['', '', ''])
+    })
+
+    it('should handle multiple statements inside if condition', () => {
+      const ast = createProgramAST([
+        createConditionalAST(
+          createBinaryOperationAST('==', createVariableAST('x'), createLiteralAST(1, 'number')),
+          [
+            createAssignmentAST('temp', createLiteralAST('intermediate', 'color')),
+            createAssignmentAST('p', createVariableAST('temp'))
+          ]
+        )
+      ])
+
+      const result = evaluator.evaluate(ast, { width: 3, height: 2 })
+
+      expect(result.success).toBe(true)
+      
+      // Only x=1 column should have the color
+      expect(result.grid![0][1]).toBe('intermediate')
+      expect(result.grid![1][1]).toBe('intermediate')
+      expect(result.grid![0][0]).toBe('')
+      expect(result.grid![0][2]).toBe('')
+    })
+
+    it('should handle nested conditions with default fallback', () => {
+      const ast = createProgramAST([
+        createAssignmentAST('p', createLiteralAST('default', 'color')),
+        createConditionalAST(
+          createBinaryOperationAST('==', createVariableAST('x'), createLiteralAST(2, 'number')),
+          [createAssignmentAST('p', createLiteralAST('special', 'color'))]
+        )
+      ])
+
+      const result = evaluator.evaluate(ast, { width: 4, height: 2 })
+
+      expect(result.success).toBe(true)
+      
+      // x=2 should be special, others should be default
+      expect(result.grid![0][0]).toBe('default')
+      expect(result.grid![0][1]).toBe('default')
+      expect(result.grid![0][2]).toBe('special')
+      expect(result.grid![0][3]).toBe('default')
+    })
+  })
+
   describe('Performance', () => {
     it('should handle reasonable grid sizes efficiently', () => {
       const ast = createProgramAST([
@@ -266,5 +386,29 @@ function createVariableAST(name: string): VariableNode {
   return {
     type: 'Variable',
     name
+  }
+}
+
+function createBinaryOperationAST(
+  operator: BinaryOperationNode['operator'], 
+  left: VariableNode | LiteralNode, 
+  right: VariableNode | LiteralNode
+): BinaryOperationNode {
+  return {
+    type: 'BinaryOperation',
+    operator,
+    left,
+    right
+  }
+}
+
+function createConditionalAST(
+  condition: BinaryOperationNode, 
+  thenBody: AssignmentNode[]
+): ConditionalNode {
+  return {
+    type: 'Conditional',
+    condition,
+    thenBody
   }
 }

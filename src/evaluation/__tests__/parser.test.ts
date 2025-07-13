@@ -7,6 +7,8 @@ import type {
   AssignmentNode, 
   LiteralNode, 
   VariableNode,
+  ConditionalNode,
+  BinaryOperationNode,
   ParseResult
 } from '../ast-types'
 
@@ -82,12 +84,12 @@ describe('CodeParser', () => {
           { type: 'variable', value: 'p' },
           { type: 'operator', value: '=' },
           { type: 'color', value: 'red' }
-        ]),
+        ], 0),
         createTestLine([
           { type: 'variable', value: 'x' },
           { type: 'operator', value: '=' },
           { type: 'number', value: '3' }
-        ])
+        ], 1)
       ])
 
       const result = parser.parse(structure)
@@ -212,6 +214,99 @@ describe('CodeParser', () => {
     })
   })
 
+  describe('Conditional Parsing', () => {
+    it('should parse simple if condition: if x == 2', () => {
+      const structure = createTestStructure([
+        createTestLine([
+          { type: 'control', value: 'if' },
+          { type: 'variable', value: 'x' },
+          { type: 'operator', value: '==' },
+          { type: 'number', value: '2' }
+        ])
+      ])
+
+      const result = parser.parse(structure)
+
+      expect(result.success).toBe(true)
+      expect(result.ast!.body).toHaveLength(1)
+
+      const conditional = result.ast!.body[0] as ConditionalNode
+      expect(conditional.type).toBe('Conditional')
+      
+      const condition = conditional.condition as BinaryOperationNode
+      expect(condition.type).toBe('BinaryOperation')
+      expect(condition.operator).toBe('==')
+      expect((condition.left as VariableNode).name).toBe('x')
+      expect((condition.right as LiteralNode).value).toBe(2)
+    })
+
+    it('should parse if condition with comparison operators', () => {
+      const operators = ['==', '!=', '<', '>', '<=', '>=']
+      
+      operators.forEach(op => {
+        const structure = createTestStructure([
+          createTestLine([
+            { type: 'control', value: 'if' },
+            { type: 'variable', value: 'y' },
+            { type: 'operator', value: op },
+            { type: 'number', value: '4' }
+          ])
+        ])
+
+        const result = parser.parse(structure)
+        expect(result.success).toBe(true)
+        
+        const conditional = result.ast!.body[0] as ConditionalNode
+        const condition = conditional.condition as BinaryOperationNode
+        expect(condition.operator).toBe(op)
+      })
+    })
+
+    it('should parse if condition with child statements', () => {
+      const structure = createTestStructure([
+        // if x == 2
+        createTestLine([
+          { type: 'control', value: 'if' },
+          { type: 'variable', value: 'x' },
+          { type: 'operator', value: '==' },
+          { type: 'number', value: '2' }
+        ], 0, 0), // indent level 0
+        // indented: p = blue
+        createTestLine([
+          { type: 'variable', value: 'p' },
+          { type: 'operator', value: '=' },
+          { type: 'color', value: 'blue' }
+        ], 1, 1, 'line-0') // indent level 1, parent line 0
+      ])
+
+      const result = parser.parse(structure)
+
+      expect(result.success).toBe(true)
+      const conditional = result.ast!.body[0] as ConditionalNode
+      expect(conditional.thenBody).toHaveLength(1)
+      
+      const thenStatement = conditional.thenBody[0] as AssignmentNode
+      expect(thenStatement.variable.name).toBe('p')
+      expect((thenStatement.value as LiteralNode).value).toBe('blue')
+    })
+
+    it('should handle malformed if conditions', () => {
+      const structure = createTestStructure([
+        createTestLine([
+          { type: 'control', value: 'if' },
+          { type: 'variable', value: 'x' }
+          // Missing operator and value
+        ])
+      ])
+
+      const result = parser.parse(structure)
+
+      expect(result.success).toBe(false)
+      expect(result.errors).toHaveLength(1)
+      expect(result.errors[0].message).toContain('condition')
+    })
+  })
+
   describe('Line Location Tracking', () => {
     it('should track line numbers for error reporting', () => {
       const structure = createTestStructure([
@@ -261,7 +356,7 @@ function createTestStructure(lines: CodeLine[]): CodeStructure {
   }
 }
 
-function createTestLine(blocks: Partial<CodeBlock>[], lineIndex = 0): CodeLine {
+function createTestLine(blocks: Partial<CodeBlock>[], lineIndex = 0, indentLevel = 0, parentLineId?: string): CodeLine {
   const fullBlocks = blocks.map((block, index) => ({
     id: `block-${lineIndex}-${index}`,
     type: block.type as any,
@@ -272,7 +367,8 @@ function createTestLine(blocks: Partial<CodeBlock>[], lineIndex = 0): CodeLine {
   return {
     id: `line-${lineIndex}`,
     type: 'expression',
-    indentLevel: 0,
+    indentLevel,
+    parentLineId,
     slots: fullBlocks.map((_, index) => ({
       id: `slot-${index}`,
       placeholder: 'drop here'

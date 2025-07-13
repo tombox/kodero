@@ -294,6 +294,11 @@ function removeLine(lineId: string) {
     structure.lines.splice(index, 1)
     console.log(`Removed line ${lineId} and its child lines`)
     emit('structure-changed', editorStructure.value)
+    
+    // NEW: Trigger real-time evaluation after line removal
+    if (props.enableEvaluation) {
+      executeCode()
+    }
   }
 }
 

@@ -42,12 +42,12 @@ describe('Parser + Evaluator Integration', () => {
           { type: 'variable', value: 'myColor' },
           { type: 'operator', value: '=' },
           { type: 'color', value: 'blue' }
-        ]),
+        ], 0),
         createTestLine([
           { type: 'variable', value: 'p' },
           { type: 'operator', value: '=' },
           { type: 'variable', value: 'myColor' }
-        ])
+        ], 1)
       ])
 
       const parseResult = parser.parse(structure)
@@ -71,8 +71,8 @@ describe('Parser + Evaluator Integration', () => {
       const evalResult = evaluator.evaluate(parseResult.ast!, { width: 2, height: 2 })
       expect(evalResult.success).toBe(true)
       expect(evalResult.grid).toEqual([
-        ['gray', 'gray'],
-        ['gray', 'gray']
+        ['', ''],
+        ['', '']
       ])
     })
 
@@ -118,12 +118,12 @@ describe('Parser + Evaluator Integration', () => {
           { type: 'variable', value: 'x' },
           { type: 'operator', value: '=' },
           { type: 'number', value: '42' }
-        ]),
+        ], 0),
         createTestLine([
           { type: 'variable', value: 'p' },
           { type: 'operator', value: '=' },
           { type: 'color', value: 'green' }
-        ])
+        ], 1)
       ])
 
       const parseResult = parser.parse(structure)
@@ -191,17 +191,17 @@ describe('Parser + Evaluator Integration', () => {
           { type: 'variable', value: 'color1' },
           { type: 'operator', value: '=' },
           { type: 'color', value: 'red' }
-        ]),
+        ], 0),
         createTestLine([
           { type: 'variable', value: 'color2' },
           { type: 'operator', value: '=' },
           { type: 'variable', value: 'color1' }
-        ]),
+        ], 1),
         createTestLine([
           { type: 'variable', value: 'p' },
           { type: 'operator', value: '=' },
           { type: 'variable', value: 'color2' }
-        ])
+        ], 2)
       ])
 
       const parseResult = parser.parse(structure)

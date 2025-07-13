@@ -13,7 +13,9 @@ import type {
   AssignmentNode, 
   LiteralNode, 
   VariableNode, 
-  ASTNode 
+  ASTNode,
+  ConditionalNode,
+  BinaryOperationNode
 } from './ast-types'
 
 export class CodeParser {
@@ -23,13 +25,19 @@ export class CodeParser {
   parse(structure: CodeStructure): ParseResult {
     const errors: ParseResult['errors'] = []
     const statements: ASTNode[] = []
+    const processedLines = new Set<string>()
 
-    // Process each line in the structure
+    // Process each line in the structure, handling nesting
     for (let i = 0; i < structure.lines.length; i++) {
       const line = structure.lines[i]
       
+      // Skip lines that have already been processed as children
+      if (processedLines.has(line.id)) {
+        continue
+      }
+      
       try {
-        const statement = this.parseLine(line, i)
+        const statement = this.parseLineWithChildren(line, i, structure, processedLines)
         if (statement) {
           statements.push(statement)
         }
@@ -57,6 +65,46 @@ export class CodeParser {
   }
 
   /**
+   * Parse a line and its children, handling nested structures
+   */
+  private parseLineWithChildren(
+    line: CodeLine, 
+    lineIndex: number, 
+    structure: CodeStructure, 
+    processedLines: Set<string>
+  ): ASTNode | null {
+    processedLines.add(line.id)
+    
+    const statement = this.parseLine(line, lineIndex)
+    if (!statement) {
+      return null
+    }
+
+    // If this is a conditional, find and parse its child statements
+    if (statement.type === 'Conditional') {
+      const conditional = statement as ConditionalNode
+      const childLines = structure.lines.filter(childLine => 
+        childLine.parentLineId === line.id
+      )
+
+      for (const childLine of childLines) {
+        const childIndex = structure.lines.indexOf(childLine)
+        try {
+          const childStatement = this.parseLineWithChildren(childLine, childIndex, structure, processedLines)
+          if (childStatement) {
+            conditional.thenBody.push(childStatement)
+          }
+        } catch (error) {
+          // Re-throw with child line context
+          throw new Error(`Error in nested statement: ${error instanceof Error ? error.message : 'Unknown error'}`)
+        }
+      }
+    }
+
+    return statement
+  }
+
+  /**
    * Parse a single line into an AST node
    */
   private parseLine(line: CodeLine, lineIndex: number): ASTNode | null {
@@ -68,13 +116,30 @@ export class CodeParser {
       return null
     }
 
-    // Try to parse as assignment first
+    // Try to parse as conditional first
+    if (this.looksLikeConditional(blocks)) {
+      return this.parseConditional(blocks, lineIndex, line)
+    }
+
+    // Try to parse as assignment
     if (this.looksLikeAssignment(blocks)) {
       return this.parseAssignment(blocks, lineIndex)
     }
 
     // If we can't recognize the pattern, it's an error
     throw new Error(`Unrecognized code pattern at line ${lineIndex + 1}`)
+  }
+
+  /**
+   * Check if blocks look like they're trying to be a conditional
+   */
+  private looksLikeConditional(blocks: CodeBlock[]): boolean {
+    // If it starts with 'if' control block, treat as conditional attempt
+    return (
+      blocks.length >= 1 && 
+      blocks[0].type === 'control' && 
+      blocks[0].value === 'if'
+    )
   }
 
   /**
@@ -140,6 +205,56 @@ export class CodeParser {
       type: 'Assignment',
       variable,
       value,
+      location: { line: lineIndex }
+    }
+  }
+
+  /**
+   * Parse a conditional pattern into a ConditionalNode
+   */
+  private parseConditional(blocks: CodeBlock[], lineIndex: number, line: CodeLine): ConditionalNode {
+    // Basic validation: if <variable> <operator> <value>
+    if (blocks.length < 4) {
+      throw new Error('Invalid if condition: expected format "if variable operator value"')
+    }
+
+    if (blocks[0].type !== 'control' || blocks[0].value !== 'if') {
+      throw new Error('Invalid conditional: expected "if" keyword')
+    }
+
+    // Parse the condition as a binary operation
+    const leftOperand = this.parseValue(blocks[1], lineIndex)
+    
+    if (blocks[2].type !== 'operator') {
+      throw new Error('Invalid condition: expected comparison operator')
+    }
+    
+    const operator = blocks[2].value
+    const validOperators = ['==', '!=', '<', '>', '<=', '>=']
+    if (!validOperators.includes(operator)) {
+      throw new Error(`Invalid comparison operator: ${operator}`)
+    }
+
+    const rightOperand = this.parseValue(blocks[3], lineIndex)
+
+    const condition: BinaryOperationNode = {
+      type: 'BinaryOperation',
+      operator: operator as BinaryOperationNode['operator'],
+      left: leftOperand,
+      right: rightOperand,
+      location: { line: lineIndex }
+    }
+
+    // Find child statements - look for lines with this line as parent
+    const thenBody: ASTNode[] = []
+    
+    // In the current implementation, we need to look at the structure to find child lines
+    // For now, we'll create the conditional with empty body and let the main parse loop handle nesting
+    
+    return {
+      type: 'Conditional',
+      condition,
+      thenBody,
       location: { line: lineIndex }
     }
   }

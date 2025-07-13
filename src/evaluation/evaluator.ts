@@ -11,6 +11,8 @@ import type {
   LiteralNode, 
   VariableNode, 
   ASTNode,
+  ConditionalNode,
+  BinaryOperationNode,
   ExecutionContext,
   EvaluationResult
 } from './ast-types'
@@ -18,7 +20,9 @@ import type {
 import {
   isAssignmentNode,
   isLiteralNode,
-  isVariableNode
+  isVariableNode,
+  isConditionalNode,
+  isBinaryOperationNode
 } from './ast-types'
 
 export class CodeEvaluator {
@@ -38,7 +42,7 @@ export class CodeEvaluator {
           this.executeStatements(ast.body, context)
           
           // Get the final value of 'p' (pixel color)
-          const pixelColor = context.variables.get('p') || 'gray'
+          const pixelColor = context.variables.get('p') || ''
           grid[y][x] = pixelColor
         } catch (error) {
           // Record error but continue evaluation
@@ -70,7 +74,7 @@ export class CodeEvaluator {
     // Initialize built-in variables
     variables.set('x', x)
     variables.set('y', y)
-    variables.set('p', 'gray') // Default pixel color
+    variables.set('p', '') // Default pixel color (empty for transparent)
 
     return {
       variables,
@@ -94,6 +98,8 @@ export class CodeEvaluator {
   private executeStatement(statement: ASTNode, context: ExecutionContext): void {
     if (isAssignmentNode(statement)) {
       this.executeAssignment(statement, context)
+    } else if (isConditionalNode(statement)) {
+      this.executeConditional(statement, context)
     } else {
       throw new Error(`Unknown statement type: ${statement.type}`)
     }
@@ -111,6 +117,71 @@ export class CodeEvaluator {
   }
 
   /**
+   * Execute a conditional statement
+   */
+  private executeConditional(conditional: ConditionalNode, context: ExecutionContext): void {
+    const conditionResult = this.evaluateCondition(conditional.condition, context)
+    
+    if (conditionResult) {
+      // Execute the then body if condition is true
+      this.executeStatements(conditional.thenBody, context)
+    }
+    // TODO: Add else body support when needed
+  }
+
+  /**
+   * Evaluate a condition (binary operation or variable) to get a boolean result
+   */
+  private evaluateCondition(condition: BinaryOperationNode | VariableNode, context: ExecutionContext): boolean {
+    if (isBinaryOperationNode(condition)) {
+      return this.evaluateBinaryOperation(condition, context)
+    }
+    
+    if (isVariableNode(condition)) {
+      const value = this.evaluateExpression(condition, context)
+      // Convert to boolean (truthy values)
+      return Boolean(value)
+    }
+    
+    throw new Error(`Unknown condition type: ${condition.type}`)
+  }
+
+  /**
+   * Evaluate a binary operation and return the result
+   */
+  private evaluateBinaryOperation(operation: BinaryOperationNode, context: ExecutionContext): any {
+    const leftValue = this.evaluateExpression(operation.left, context)
+    const rightValue = this.evaluateExpression(operation.right, context)
+    
+    switch (operation.operator) {
+      case '==':
+        return leftValue === rightValue
+      case '!=':
+        return leftValue !== rightValue
+      case '<':
+        return leftValue < rightValue
+      case '>':
+        return leftValue > rightValue
+      case '<=':
+        return leftValue <= rightValue
+      case '>=':
+        return leftValue >= rightValue
+      case '+':
+        return leftValue + rightValue
+      case '-':
+        return leftValue - rightValue
+      case '*':
+        return leftValue * rightValue
+      case '/':
+        return leftValue / rightValue
+      case '%':
+        return leftValue % rightValue
+      default:
+        throw new Error(`Unknown binary operator: ${operation.operator}`)
+    }
+  }
+
+  /**
    * Evaluate an expression to get its value
    */
   private evaluateExpression(expression: ASTNode, context: ExecutionContext): any {
@@ -124,6 +195,10 @@ export class CodeEvaluator {
         throw new Error(`Undefined variable: ${expression.name}`)
       }
       return value
+    }
+    
+    if (isBinaryOperationNode(expression)) {
+      return this.evaluateBinaryOperation(expression, context)
     }
 
     throw new Error(`Unknown expression type: ${expression.type}`)

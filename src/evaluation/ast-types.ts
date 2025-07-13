@@ -37,7 +37,7 @@ export interface AssignmentNode extends ASTNode {
 // Binary operations (+, -, *, /, ==, !=, <, >, etc.)
 export interface BinaryOperationNode extends ASTNode {
   type: 'BinaryOperation'
-  operator: '=' | '==' | '!=' | '<' | '>' | '<=' | '>=' | '+' | '-' | '*' | '/' | '%'
+  operator: '==' | '!=' | '<' | '>' | '<=' | '>=' | '+' | '-' | '*' | '/' | '%'
   left: ASTNode
   right: ASTNode
 }

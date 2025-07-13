@@ -260,118 +260,11 @@ function handleEvaluationError(errors: any[]) {
       </div>
     </section>
 
-    <!-- Phase 3: Drag & Drop System -->
-    <section class="demo-section">
-      <h2>🎯 Phase 3: Drag & Drop System (Completed)</h2>
-      
-      <div class="dragdrop-demo">
-        <div class="demo-instruction">
-          <p>✨ <strong>Try it out:</strong> Drag any block from above and drop it into the slots below!</p>
-          <p>📐 <strong>Notice:</strong> All slots maintain fixed sizes whether empty or filled</p>
-          <p>🎛️ Check the browser console to see drag/drop event logs</p>
-        </div>
-        
-        <div class="slots-container">
-          <div class="slot-demo">
-            <h3>Basic Code Slots</h3>
-            <div class="slot-row">
-              <div class="slot-wrapper">
-                <label>Any Block Type:</label>
-                <CodeSlot
-                  :placed-block="slotBlocks[0] || undefined"
-                  placeholder="Drop any block here"
-                  @block-dropped="handleBlockDropped(0, $event)"
-                  @block-removed="handleBlockRemoved(0, $event)"
-                />
-              </div>
-              
-              <div class="slot-wrapper">
-                <label>Pre-filled Slot:</label>
-                <CodeSlot
-                  :placed-block="slotBlocks[1] || undefined"
-                  placeholder="Drop any block here"
-                  @block-dropped="handleBlockDropped(1, $event)"
-                  @block-removed="handleBlockRemoved(1, $event)"
-                />
-              </div>
-              
-              <div class="slot-wrapper">
-                <label>Numbers Only:</label>
-                <CodeSlot
-                  :placed-block="slotBlocks[2] || undefined"
-                  :accepted-types="['number']"
-                  :show-type-indicator="true"
-                  placeholder="Numbers only"
-                  @block-dropped="handleBlockDropped(2, $event)"
-                  @block-removed="handleBlockRemoved(2, $event)"
-                />
-              </div>
-            </div>
-          </div>
-          
-          <div class="slot-demo">
-            <h3>Size Variants</h3>
-            <div class="slot-row">
-              <div class="slot-wrapper">
-                <label>Small:</label>
-                <CodeSlot
-                  size="small"
-                  placeholder="Small slot"
-                />
-              </div>
-              
-              <div class="slot-wrapper">
-                <label>Medium:</label>
-                <CodeSlot
-                  size="medium"
-                  placeholder="Medium slot"
-                />
-              </div>
-              
-              <div class="slot-wrapper">
-                <label>Large:</label>
-                <CodeSlot
-                  size="large"
-                  placeholder="Large slot"
-                />
-              </div>
-            </div>
-          </div>
-          
-          <div class="slot-demo">
-            <h3>Disabled State</h3>
-            <div class="slot-row">
-              <CodeSlot
-                disabled
-                placeholder="This slot is disabled"
-              />
-            </div>
-          </div>
-        </div>
-        
-        <div class="coming-soon">
-          <p>🚧 <strong>Still to come:</strong></p>
-          <ul>
-            <li>Real-time code evaluation and grid updates</li>
-            <li>Advanced drag feedback and animations</li>
-            <li>Keyboard accessibility for drag operations</li>
-          </ul>
-        </div>
-      </div>
-    </section>
-
     <!-- Phase 4: Code Editor System -->
     <section class="demo-section">
       <h2>🏗️ Phase 4: Code Editor System (Completed)</h2>
       
       <div class="codeeditor-demo">
-        <div class="demo-instruction">
-          <p>🎯 <strong>Try it out:</strong> Build flexible expressions like "pixel = red + yellow"!</p>
-          <p>🔄 <strong>Auto-indenting:</strong> Drag 'if' or 'else' blocks to create indented structure automatically</p>
-          <p>🚀 <strong>Auto-growing:</strong> Lines and slots appear automatically as you build code</p>
-          <p>🎨 <strong>Experiment:</strong> Try color mixing, math operations, and nested conditionals!</p>
-        </div>
-        
         <div class="editor-container">
           <CodeEditor
             :template="selectedTemplate"
