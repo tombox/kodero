@@ -13,7 +13,7 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  template: 'EXPRESSION',
+  template: 'UNIFIED',
   disabled: false,
   maxLines: 10
 })
@@ -51,28 +51,8 @@ watch(() => props.structure, (newStructure) => {
 })
 
 // Computed properties
-const isConditional = computed(() => 
-  editorStructure.value && editorStructure.value.type === 'conditional'
-)
-
-const hasElse = computed(() => 
-  isConditional.value && 
-  editorStructure.value && 
-  editorStructure.value.children && 
-  editorStructure.value.children.length > 1
-)
-
-const ifBody = computed(() => 
-  isConditional.value && editorStructure.value && editorStructure.value.children 
-    ? editorStructure.value.children[0] : null
-)
-
-const elseBody = computed(() => 
-  isConditional.value && 
-  editorStructure.value && 
-  editorStructure.value.children && 
-  editorStructure.value.children.length > 1 
-    ? editorStructure.value.children[1] : null
+const allLines = computed(() => 
+  editorStructure.value ? editorStructure.value.lines : []
 )
 
 // Helper functions
@@ -81,20 +61,7 @@ function getSlotKey(lineId: string, slotIndex: number): string {
 }
 
 function findLineById(structure: CodeStructure, lineId: string): CodeLine | null {
-  // Search in main lines
-  for (const line of structure.lines) {
-    if (line.id === lineId) return line
-  }
-  
-  // Search in children
-  if (structure.children) {
-    for (const child of structure.children) {
-      const found = findLineById(child, lineId)
-      if (found) return found
-    }
-  }
-  
-  return null
+  return structure.lines.find(line => line.id === lineId) || null
 }
 
 // Event handlers
@@ -110,7 +77,7 @@ function handleBlockDropped(lineId: string, slotIndex: number, blockData: CodeBl
   // Place the block in the new slot
   line.placedBlocks[slotIndex] = blockData
   
-  // Auto-grow: if this was the last slot and we're within maxSlots limit, add a new slot
+  // Auto-grow slots: if this was the last slot and we're within maxSlots limit, add a new slot
   const maxSlots = line.maxSlots || 10
   if (slotIndex === line.slots.length - 1 && line.slots.length < maxSlots) {
     const newSlotIndex = line.slots.length
@@ -120,6 +87,17 @@ function handleBlockDropped(lineId: string, slotIndex: number, blockData: CodeBl
     })
     line.placedBlocks.push(null)
     console.log(`Auto-added slot ${newSlotIndex} to line ${lineId}`)
+  }
+  
+  // Auto-add new line: if this is the first block on an empty line, add next line
+  const isFirstBlockOnLine = line.placedBlocks.filter(block => block !== null).length === 1
+  if (isFirstBlockOnLine) {
+    addNextLine(lineId)
+  }
+  
+  // Auto-indent: if this is a control block (if/else), add indented child line
+  if (blockData.type === 'control' && (blockData.value === 'if' || blockData.value === 'else')) {
+    addIndentedLine(lineId)
   }
   
   emit('block-placed', lineId, line.slots[slotIndex].id, blockData)
@@ -133,6 +111,11 @@ function handleBlockRemoved(lineId: string, slotIndex: number, block: CodeBlock)
   console.log(`Block removed from CodeEditor: ${block.type}(${block.value}) from ${lineId}[${slotIndex}]`)
   
   line.placedBlocks[slotIndex] = null
+  
+  // Auto-cleanup: if this was a control block (if/else), remove its indented child lines
+  if (block.type === 'control' && (block.value === 'if' || block.value === 'else')) {
+    removeIndentedChildLines(lineId)
+  }
   
   // Auto-shrink: remove trailing empty slots but keep at least minSlots
   const minSlots = line.minSlots || 1
@@ -153,39 +136,68 @@ function handleBlockRemoved(lineId: string, slotIndex: number, block: CodeBlock)
 }
 
 function removeBlockFromOtherSlots(blockId: string, targetLineId: string, targetSlotIndex: number) {
-  function searchAndRemove(structure: CodeStructure) {
-    for (const line of structure.lines) {
-      for (let i = 0; i < line.placedBlocks.length; i++) {
-        const block = line.placedBlocks[i]
-        if (block && block.id === blockId) {
-          // Don't remove from the target slot
-          if (line.id === targetLineId && i === targetSlotIndex) continue
-          
-          console.log(`Moving block from ${line.id}[${i}] to ${targetLineId}[${targetSlotIndex}]`)
-          line.placedBlocks[i] = null
-        }
+  for (const line of editorStructure.value.lines) {
+    for (let i = 0; i < line.placedBlocks.length; i++) {
+      const block = line.placedBlocks[i]
+      if (block && block.id === blockId) {
+        // Don't remove from the target slot
+        if (line.id === targetLineId && i === targetSlotIndex) continue
+        
+        console.log(`Moving block from ${line.id}[${i}] to ${targetLineId}[${targetSlotIndex}]`)
+        line.placedBlocks[i] = null
       }
     }
-    
-    if (structure.children) {
-      structure.children.forEach(searchAndRemove)
+  }
+}
+
+// Remove all indented child lines that belong to a parent control line
+function removeIndentedChildLines(parentLineId: string) {
+  const structure = editorStructure.value
+  const parentLine = findLineById(structure, parentLineId)
+  if (!parentLine) return
+  
+  const childLinesToRemove: string[] = []
+  
+  // Find all lines that have this line as their parent (direct children)
+  for (const line of structure.lines) {
+    if (line.parentLineId === parentLineId) {
+      childLinesToRemove.push(line.id)
     }
   }
   
-  searchAndRemove(editorStructure.value)
+  // Recursively find and remove grandchildren, great-grandchildren, etc.
+  for (const childLineId of childLinesToRemove) {
+    removeIndentedChildLines(childLineId) // Recursive call for nested children
+  }
+  
+  // Remove all collected child lines
+  for (const childLineId of childLinesToRemove) {
+    const index = structure.lines.findIndex(line => line.id === childLineId)
+    if (index !== -1) {
+      structure.lines.splice(index, 1)
+      console.log(`Auto-removed indented child line ${childLineId} (parent: ${parentLineId})`)
+    }
+  }
 }
 
-function addLine(targetStructure?: CodeStructure) {
-  const structure = targetStructure || editorStructure.value
-  
+// Add next line at same indent level
+function addNextLine(afterLineId: string) {
+  const structure = editorStructure.value
   if (structure.lines.length >= props.maxLines) {
     console.warn('Maximum lines reached')
     return
   }
 
+  const afterLine = findLineById(structure, afterLineId)
+  if (!afterLine) return
+
+  const afterIndex = structure.lines.findIndex(line => line.id === afterLineId)
+  
   const newLine: CodeLine = {
     id: `line-${Date.now()}`,
     type: 'expression',
+    indentLevel: afterLine.indentLevel, // Same indent level
+    parentLineId: afterLine.parentLineId,
     slots: [
       { id: 'slot-0', placeholder: 'drop here' }
     ],
@@ -194,59 +206,70 @@ function addLine(targetStructure?: CodeStructure) {
     maxSlots: 10
   }
   
-  structure.lines.push(newLine)
+  // Insert after the current line
+  structure.lines.splice(afterIndex + 1, 0, newLine)
+  console.log(`Auto-added next line after ${afterLineId} at indent level ${afterLine.indentLevel}`)
   emit('structure-changed', editorStructure.value)
 }
 
-function addSlot(lineId: string) {
-  const line = findLineById(editorStructure.value, lineId)
-  if (!line || props.disabled) return
-  
-  const maxSlots = line.maxSlots || 10
-  if (line.slots.length >= maxSlots) {
-    console.warn('Maximum slots reached for this line')
+// Add indented child line
+function addIndentedLine(parentLineId: string) {
+  const structure = editorStructure.value
+  if (structure.lines.length >= props.maxLines) {
+    console.warn('Maximum lines reached')
     return
   }
-  
-  const newSlotIndex = line.slots.length
-  line.slots.push({
-    id: `slot-${newSlotIndex}`,
-    placeholder: 'drop here'
-  })
-  line.placedBlocks.push(null)
-  
-  console.log(`Added slot to line ${lineId}`)
-  emit('structure-changed', editorStructure.value)
-}
 
-function removeSlot(lineId: string, slotIndex: number) {
-  const line = findLineById(editorStructure.value, lineId)
-  if (!line || props.disabled) return
+  const parentLine = findLineById(structure, parentLineId)
+  if (!parentLine) return
+
+  const parentIndex = structure.lines.findIndex(line => line.id === parentLineId)
   
-  const minSlots = line.minSlots || 1
-  if (line.slots.length <= minSlots) {
-    console.warn('Cannot remove: minimum slots reached')
-    return
+  const newLine: CodeLine = {
+    id: `line-${Date.now()}`,
+    type: 'expression',
+    indentLevel: parentLine.indentLevel + 1, // One level deeper
+    parentLineId: parentLineId,
+    slots: [
+      { id: 'slot-0', placeholder: 'drop here' }
+    ],
+    placedBlocks: [null],
+    minSlots: 1,
+    maxSlots: 10
   }
   
-  line.slots.splice(slotIndex, 1)
-  line.placedBlocks.splice(slotIndex, 1)
-  
-  console.log(`Removed slot ${slotIndex} from line ${lineId}`)
+  // Insert after the parent line
+  structure.lines.splice(parentIndex + 1, 0, newLine)
+  console.log(`Auto-added indented line under ${parentLineId} at indent level ${newLine.indentLevel}`)
   emit('structure-changed', editorStructure.value)
 }
 
-function removeLine(lineId: string, targetStructure?: CodeStructure) {
-  const structure = targetStructure || editorStructure.value
+// Legacy function for manual line adding (now simplified)
+function addLine() {
+  if (allLines.value.length === 0) return
+  addNextLine(allLines.value[allLines.value.length - 1].id)
+}
+
+function removeLine(lineId: string) {
+  const structure = editorStructure.value
+  const lineToRemove = findLineById(structure, lineId)
+  
+  if (!lineToRemove) return
+  
+  // Check if this line has any control blocks - if so, clean up its child lines
+  const hasControlBlocks = lineToRemove.placedBlocks.some(block => 
+    block && block.type === 'control' && (block.value === 'if' || block.value === 'else')
+  )
+  
+  if (hasControlBlocks) {
+    removeIndentedChildLines(lineId)
+  }
+  
   const index = structure.lines.findIndex(line => line.id === lineId)
-  
   if (index !== -1) {
     structure.lines.splice(index, 1)
+    console.log(`Removed line ${lineId} and its child lines`)
     emit('structure-changed', editorStructure.value)
-  }
-  
-  if (structure.children) {
-    structure.children.forEach(child => removeLine(lineId, child))
   }
 }
 
@@ -262,13 +285,12 @@ function executeCode() {
   <div class="code-editor" :class="{ 'code-editor--disabled': disabled }">
     <div class="code-editor__header">
       <h3 class="code-editor__title">
-        {{ template }} Code Structure
+        Code Editor
       </h3>
       <div class="code-editor__actions">
         <button 
-          v-if="editorStructure && editorStructure.type === 'linear'"
           @click="addLine()"
-          :disabled="disabled || editorStructure.lines.length >= maxLines"
+          :disabled="disabled || allLines.length >= maxLines"
           class="code-editor__btn code-editor__btn--add"
           title="Add line"
         >
@@ -286,19 +308,23 @@ function executeCode() {
     </div>
 
     <div class="code-editor__body">
-      <!-- Main structure lines -->
-      <div v-if="editorStructure && editorStructure.lines && editorStructure.lines.length > 0" class="code-lines">
+      <!-- Unified line structure with auto-indenting -->
+      <div v-if="allLines.length > 0" class="code-lines">
         <div 
-          v-for="line in editorStructure.lines" 
+          v-for="line in allLines" 
           :key="line.id"
           class="code-line"
-          :class="`code-line--${line.type}`"
+          :class="[
+            `code-line--${line.type}`,
+            `code-line--indent-${line.indentLevel}`,
+            { 'code-line--indented': line.indentLevel > 0 }
+          ]"
         >
           <div class="code-line__slots">
             <CodeSlot
               v-for="(slot, slotIndex) in line.slots"
               :key="getSlotKey(line.id, slotIndex)"
-              :placed-block="line.placedBlocks[slotIndex]"
+              :placed-block="line.placedBlocks[slotIndex] || undefined"
               :accepted-types="slot.acceptedTypes"
               :placeholder="slot.placeholder"
               :disabled="disabled"
@@ -309,120 +335,13 @@ function executeCode() {
           </div>
           
           <button 
-            v-if="!disabled && editorStructure && editorStructure.type === 'linear' && editorStructure.lines.length > 1"
+            v-if="!disabled && allLines.length > 1"
             @click="removeLine(line.id)"
             class="code-line__remove"
             title="Remove line"
           >
             ×
           </button>
-        </div>
-      </div>
-
-      <!-- Conditional structure (if/else) -->
-      <div v-if="isConditional" class="conditional-structure">
-        <!-- If body -->
-        <div v-if="ifBody" class="conditional-block conditional-block--if">
-          <div class="conditional-block__header">
-            <span class="conditional-block__label">Then:</span>
-            <button 
-              v-if="!disabled"
-              @click="addLine(ifBody)"
-              :disabled="ifBody.lines.length >= maxLines"
-              class="code-editor__btn code-editor__btn--add code-editor__btn--small"
-            >
-              + Add
-            </button>
-          </div>
-          
-          <div class="code-lines code-lines--nested">
-            <div 
-              v-for="line in ifBody.lines" 
-              :key="line.id"
-              class="code-line code-line--nested"
-              :class="`code-line--${line.type}`"
-            >
-              <div class="code-line__slots">
-                <CodeSlot
-                  v-for="(slot, slotIndex) in line.slots"
-                  :key="getSlotKey(line.id, slotIndex)"
-                  :placed-block="line.placedBlocks[slotIndex]"
-                  :accepted-types="slot.acceptedTypes"
-                  :placeholder="slot.placeholder"
-                  :disabled="disabled"
-                  size="medium"
-                  @block-dropped="handleBlockDropped(line.id, slotIndex, $event)"
-                  @block-removed="handleBlockRemoved(line.id, slotIndex, $event)"
-                />
-                
-              </div>
-              
-              <button 
-                v-if="!disabled && ifBody.lines.length > 1"
-                @click="removeLine(line.id, ifBody)"
-                class="code-line__remove"
-                title="Remove line"
-              >
-                ×
-              </button>
-            </div>
-            
-            <div v-if="ifBody.lines.length === 0" class="code-lines__empty">
-              <span class="code-lines__empty-text">Drop blocks here or click "Add" to create a line</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Else body -->
-        <div v-if="hasElse && elseBody" class="conditional-block conditional-block--else">
-          <div class="conditional-block__header">
-            <span class="conditional-block__label">Else:</span>
-            <button 
-              v-if="!disabled"
-              @click="addLine(elseBody)"
-              :disabled="elseBody.lines.length >= maxLines"
-              class="code-editor__btn code-editor__btn--add code-editor__btn--small"
-            >
-              + Add
-            </button>
-          </div>
-          
-          <div class="code-lines code-lines--nested">
-            <div 
-              v-for="line in elseBody.lines" 
-              :key="line.id"
-              class="code-line code-line--nested"
-              :class="`code-line--${line.type}`"
-            >
-              <div class="code-line__slots">
-                <CodeSlot
-                  v-for="(slot, slotIndex) in line.slots"
-                  :key="getSlotKey(line.id, slotIndex)"
-                  :placed-block="line.placedBlocks[slotIndex]"
-                  :accepted-types="slot.acceptedTypes"
-                  :placeholder="slot.placeholder"
-                  :disabled="disabled"
-                  size="medium"
-                  @block-dropped="handleBlockDropped(line.id, slotIndex, $event)"
-                  @block-removed="handleBlockRemoved(line.id, slotIndex, $event)"
-                />
-                
-              </div>
-              
-              <button 
-                v-if="!disabled && elseBody.lines.length > 1"
-                @click="removeLine(line.id, elseBody)"
-                class="code-line__remove"
-                title="Remove line"
-              >
-                ×
-              </button>
-            </div>
-            
-            <div v-if="elseBody.lines.length === 0" class="code-lines__empty">
-              <span class="code-lines__empty-text">Drop blocks here or click "Add" to create a line</span>
-            </div>
-          </div>
         </div>
       </div>
     </div>
@@ -492,11 +411,6 @@ function executeCode() {
   background-color: #0056b3;
 }
 
-.code-editor__btn--small {
-  padding: 4px 8px;
-  font-size: 10px;
-}
-
 .code-editor__btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
@@ -510,12 +424,6 @@ function executeCode() {
   display: flex;
   flex-direction: column;
   gap: 12px;
-}
-
-.code-lines--nested {
-  margin-left: 24px;
-  padding-left: 16px;
-  border-left: 3px solid #007aff;
 }
 
 .code-line {
@@ -535,13 +443,26 @@ function executeCode() {
   box-shadow: 0 2px 8px rgba(0, 122, 255, 0.1);
 }
 
-.code-line--nested {
-  background-color: #f8f9fa;
+/* Indentation styles */
+.code-line--indent-1 {
+  margin-left: 24px;
 }
 
-.code-line--condition {
-  background-color: #fff3cd;
-  border-color: #ffeaa7;
+.code-line--indent-2 {
+  margin-left: 48px;
+}
+
+.code-line--indent-3 {
+  margin-left: 72px;
+}
+
+.code-line--indent-4 {
+  margin-left: 96px;
+}
+
+.code-line--indented {
+  background-color: #f8f9fa;
+  border-left: 3px solid #007aff;
 }
 
 .code-line--assignment {
@@ -582,66 +503,6 @@ function executeCode() {
 }
 
 
-.conditional-structure {
-  margin-top: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.conditional-block {
-  border: 2px solid #007aff;
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.conditional-block--if {
-  border-color: #28a745;
-}
-
-.conditional-block--else {
-  border-color: #ffc107;
-}
-
-.conditional-block__header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px 12px;
-  background-color: #e3f2fd;
-  border-bottom: 1px solid #bbdefb;
-}
-
-.conditional-block--if .conditional-block__header {
-  background-color: #d4edda;
-  border-bottom-color: #c3e6cb;
-}
-
-.conditional-block--else .conditional-block__header {
-  background-color: #fff3cd;
-  border-bottom-color: #ffeaa7;
-}
-
-.conditional-block__label {
-  font-weight: 600;
-  font-size: 14px;
-  color: #495057;
-}
-
-.code-lines__empty {
-  padding: 24px;
-  text-align: center;
-  color: #6c757d;
-  font-style: italic;
-  border: 2px dashed #dee2e6;
-  border-radius: 8px;
-  background-color: #f8f9fa;
-}
-
-.code-lines__empty-text {
-  font-size: 14px;
-}
-
 /* Responsive design */
 @media (max-width: 768px) {
   .code-editor__header {
@@ -665,9 +526,20 @@ function executeCode() {
     flex-wrap: wrap;
   }
   
-  .code-lines--nested {
+  .code-line--indent-1 {
     margin-left: 12px;
-    padding-left: 8px;
+  }
+  
+  .code-line--indent-2 {
+    margin-left: 24px;
+  }
+  
+  .code-line--indent-3 {
+    margin-left: 36px;
+  }
+  
+  .code-line--indent-4 {
+    margin-left: 48px;
   }
 }
 

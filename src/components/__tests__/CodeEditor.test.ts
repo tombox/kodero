@@ -27,22 +27,22 @@ describe('CodeEditor', () => {
   }
 
   describe('Basic Rendering', () => {
-    it('should render with default expression template', () => {
+    it('should render with default unified template', () => {
       const wrapper = mount(CodeEditor)
       
       expect(wrapper.exists()).toBe(true)
       expect(wrapper.classes()).toContain('code-editor')
-      expect(wrapper.text()).toContain('EXPRESSION Code Structure')
+      expect(wrapper.text()).toContain('Code Editor')
     })
 
     it('should render with specified template', () => {
       const wrapper = mount(CodeEditor, {
         props: {
-          template: 'IF_ELSE'
+          template: 'UNIFIED'
         }
       })
       
-      expect(wrapper.text()).toContain('IF_ELSE Code Structure')
+      expect(wrapper.text()).toContain('Code Editor')
     })
 
     it('should show disabled state', () => {
@@ -57,10 +57,10 @@ describe('CodeEditor', () => {
   })
 
   describe('Template Structures', () => {
-    it('should render expression template correctly', () => {
+    it('should render unified template correctly', () => {
       const wrapper = mount(CodeEditor, {
         props: {
-          template: 'EXPRESSION'
+          template: 'UNIFIED'
         }
       })
       

@@ -6,7 +6,7 @@ import CodeBlock from '../components/CodeBlock.vue'
 import CodeSlot from '../components/CodeSlot.vue'
 import CodeEditor from '../components/CodeEditor.vue'
 import Toolbox from '../components/Toolbox.vue'
-import { AVAILABLE_BLOCKS } from '../types/codeBlocks'
+import { AVAILABLE_BLOCKS, type CodeBlock as CodeBlockType } from '../types/codeBlocks'
 import { getGridComparisonResult } from '../utils/gridComparison'
 
 // Sample data for demonstration
@@ -53,7 +53,7 @@ function toggleGridCompletion() {
 }
 
 // Phase 3 demo state
-const slotBlocks = ref([
+const slotBlocks = ref<(CodeBlockType | null)[]>([
   null, // Empty slot
   { id: 'demo-1', type: 'variable', value: 'x' }, // Filled slot
   null, // Empty slot with type restriction
@@ -81,8 +81,8 @@ function handleBlockRemoved(slotIndex: number, block: any) {
   slotBlocks.value[slotIndex] = null
 }
 
-// Phase 4 demo state - CodeEditor
-const selectedTemplate = ref<'EXPRESSION' | 'IF_ELSE'>('EXPRESSION')
+// Phase 4 demo state - CodeEditor (now unified)
+const selectedTemplate = ref<'UNIFIED'>('UNIFIED')
 
 function handleCodeEditorStructureChanged(structure: any) {
   console.log('CodeEditor structure changed:', structure)
@@ -92,9 +92,6 @@ function handleCodeExecuted(result: any) {
   console.log('Code executed:', result)
 }
 
-function switchTemplate() {
-  selectedTemplate.value = selectedTemplate.value === 'EXPRESSION' ? 'IF_ELSE' : 'EXPRESSION'
-}
 </script>
 
 <template>
@@ -217,7 +214,7 @@ function switchTemplate() {
               <div class="slot-wrapper">
                 <label>Any Block Type:</label>
                 <CodeSlot
-                  :placed-block="slotBlocks[0]"
+                  :placed-block="slotBlocks[0] || undefined"
                   placeholder="Drop any block here"
                   @block-dropped="handleBlockDropped(0, $event)"
                   @block-removed="handleBlockRemoved(0, $event)"
@@ -227,7 +224,7 @@ function switchTemplate() {
               <div class="slot-wrapper">
                 <label>Pre-filled Slot:</label>
                 <CodeSlot
-                  :placed-block="slotBlocks[1]"
+                  :placed-block="slotBlocks[1] || undefined"
                   placeholder="Drop any block here"
                   @block-dropped="handleBlockDropped(1, $event)"
                   @block-removed="handleBlockRemoved(1, $event)"
@@ -237,7 +234,7 @@ function switchTemplate() {
               <div class="slot-wrapper">
                 <label>Numbers Only:</label>
                 <CodeSlot
-                  :placed-block="slotBlocks[2]"
+                  :placed-block="slotBlocks[2] || undefined"
                   :accepted-types="['number']"
                   :show-type-indicator="true"
                   placeholder="Numbers only"
@@ -306,15 +303,9 @@ function switchTemplate() {
       <div class="codeeditor-demo">
         <div class="demo-instruction">
           <p>🎯 <strong>Try it out:</strong> Build flexible expressions like "pixel = red + yellow"!</p>
-          <p>📝 <strong>Features:</strong> Dynamic slots - add/remove as needed for complex expressions</p>
-          <p>🔄 <strong>Switch templates:</strong> Toggle between free-form expressions and conditional structures</p>
-          <p>🎨 <strong>Experiment:</strong> Try color mixing, math operations, and creative combinations!</p>
-        </div>
-        
-        <div class="editor-controls">
-          <button @click="switchTemplate" class="template-switch-btn">
-            Switch to {{ selectedTemplate === 'EXPRESSION' ? 'IF/ELSE' : 'EXPRESSION' }} Template
-          </button>
+          <p>🔄 <strong>Auto-indenting:</strong> Drag 'if' or 'else' blocks to create indented structure automatically</p>
+          <p>🚀 <strong>Auto-growing:</strong> Lines and slots appear automatically as you build code</p>
+          <p>🎨 <strong>Experiment:</strong> Try color mixing, math operations, and nested conditionals!</p>
         </div>
         
         <div class="editor-container">
@@ -574,30 +565,6 @@ function switchTemplate() {
   gap: 2rem;
 }
 
-.editor-controls {
-  display: flex;
-  justify-content: center;
-  padding: 1rem;
-}
-
-.template-switch-btn {
-  background-color: #6f42c1;
-  color: white;
-  border: none;
-  padding: 12px 24px;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 2px 4px rgba(111, 66, 193, 0.2);
-}
-
-.template-switch-btn:hover {
-  background-color: #5a2d91;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(111, 66, 193, 0.3);
-}
 
 .editor-container {
   display: flex;
@@ -692,10 +659,6 @@ function switchTemplate() {
     max-width: 200px;
   }
   
-  .template-switch-btn {
-    padding: 10px 20px;
-    font-size: 12px;
-  }
   
   .editor-container {
     padding: 0.5rem;
