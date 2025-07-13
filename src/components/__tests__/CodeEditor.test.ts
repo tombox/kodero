@@ -268,6 +268,159 @@ describe('CodeEditor', () => {
       expect(wrapper.emitted('structure-changed')).toBeTruthy()
     })
 
+    it('should create correct line order for if blocks: if -> indented child -> unindented next', async () => {
+      const wrapper = mount(CodeEditor, {
+        props: {
+          template: 'UNIFIED',
+          enableEvaluation: false
+        }
+      })
+      
+      // Start with initial line
+      expect(wrapper.vm.allLines).toHaveLength(1)
+      expect(wrapper.vm.allLines[0].indentLevel).toBe(0)
+
+      // Add an if block to trigger auto-indenting
+      const ifBlock: CodeBlock = { id: 'if-1', type: 'control', value: 'if' }
+      await wrapper.vm.handleBlockDropped('line-0', 0, ifBlock)
+
+      // Should create 3 lines total
+      expect(wrapper.vm.allLines).toHaveLength(3)
+      
+      // Line 0: if block (original line)
+      expect(wrapper.vm.allLines[0].indentLevel).toBe(0)
+      expect(wrapper.vm.allLines[0].placedBlocks[0]?.type).toBe('control')
+      expect(wrapper.vm.allLines[0].placedBlocks[0]?.value).toBe('if')
+      
+      // Line 1: indented child line  
+      expect(wrapper.vm.allLines[1].indentLevel).toBe(1)
+      expect(wrapper.vm.allLines[1].parentLineId).toBe(wrapper.vm.allLines[0].id)
+      
+      // Line 2: unindented next line (for else/next statement)
+      expect(wrapper.vm.allLines[2].indentLevel).toBe(0)
+      expect(wrapper.vm.allLines[2].parentLineId).toBe(wrapper.vm.allLines[0].parentLineId)
+    })
+
+    it('should handle if-else drop sequence correctly', async () => {
+      const wrapper = mount(CodeEditor, {
+        props: {
+          template: 'UNIFIED',
+          enableEvaluation: false
+        }
+      })
+
+      // Start with 1 line
+      expect(wrapper.vm.allLines).toHaveLength(1)
+
+      // Step 1: Drop 'if' block
+      const ifBlock: CodeBlock = { id: 'if-1', type: 'control', value: 'if' }
+      await wrapper.vm.handleBlockDropped('line-0', 0, ifBlock)
+
+      // Should now have 3 lines: if -> indented child -> unindented next
+      expect(wrapper.vm.allLines).toHaveLength(3)
+      const ifLineId = wrapper.vm.allLines[0].id
+      const indentedLineId = wrapper.vm.allLines[1].id
+      const unindentedLineId = wrapper.vm.allLines[2].id
+
+      console.log('After if drop:')
+      console.log(`Line 0 (if): ${ifLineId}, indent: ${wrapper.vm.allLines[0].indentLevel}`)
+      console.log(`Line 1 (indented): ${indentedLineId}, indent: ${wrapper.vm.allLines[1].indentLevel}`)
+      console.log(`Line 2 (unindented): ${unindentedLineId}, indent: ${wrapper.vm.allLines[2].indentLevel}`)
+
+      // Step 2: Try to drop 'else' in the unindented line (line 2)
+      const elseBlock: CodeBlock = { id: 'else-1', type: 'control', value: 'else' }
+      await wrapper.vm.handleBlockDropped(unindentedLineId, 0, elseBlock)
+
+      console.log('After else drop:')
+      console.log(`Lines count: ${wrapper.vm.allLines.length}`)
+      wrapper.vm.allLines.forEach((line: any, index: number) => {
+        console.log(`Line ${index}: id=${line.id}, indent=${line.indentLevel}, blocks=[${line.placedBlocks.map((b: any) => b?.value || 'empty').join(', ')}]`)
+      })
+
+      // The else should be in the unindented line we targeted
+      expect(wrapper.vm.allLines[2].placedBlocks[0]?.value).toBe('else')
+      
+      // else blocks SHOULD auto-create indented child lines for their body
+      // We should have: if line, if child, else line, else child, unindented next (5 total)
+      expect(wrapper.vm.allLines).toHaveLength(5)
+      expect(wrapper.vm.allLines[3].indentLevel).toBe(1) // else child should be indented
+      expect(wrapper.vm.allLines[3].parentLineId).toBe(wrapper.vm.allLines[2].id) // child of else line
+      expect(wrapper.vm.allLines[4].indentLevel).toBe(0) // Last line should be unindented
+    })
+
+    it('should handle multiple if-else sequences correctly', async () => {
+      const wrapper = mount(CodeEditor, {
+        props: {
+          template: 'UNIFIED',
+          enableEvaluation: false
+        }
+      })
+
+      // Start with 1 line
+      expect(wrapper.vm.allLines).toHaveLength(1)
+
+      // Step 1: Drop first 'if' block
+      const firstIfBlock: CodeBlock = { id: 'if-1', type: 'control', value: 'if' }
+      await wrapper.vm.handleBlockDropped('line-0', 0, firstIfBlock)
+
+      // Should have: if, if-child, unindented-next (3 lines)
+      expect(wrapper.vm.allLines).toHaveLength(3)
+      const firstIfChildId = wrapper.vm.allLines[1].id
+      const firstUnindentedId = wrapper.vm.allLines[2].id
+
+      // Step 2: Drop first 'else' in the unindented line
+      const firstElseBlock: CodeBlock = { id: 'else-1', type: 'control', value: 'else' }
+      await wrapper.vm.handleBlockDropped(firstUnindentedId, 0, firstElseBlock)
+
+      // Debug what we actually have after dropping the first else
+      console.log('After first else drop:')
+      wrapper.vm.allLines.forEach((line: any, index: number) => {
+        console.log(`Line ${index}: id=${line.id}, indent=${line.indentLevel}, parent=${line.parentLineId || 'none'}, blocks=[${line.placedBlocks.map((b: any) => b?.value || 'empty').join(', ')}]`)
+      })
+
+      // Should have: if, if-child, else, else-child, unindented-next (5 lines)
+      expect(wrapper.vm.allLines).toHaveLength(5)
+      expect(wrapper.vm.allLines[2].placedBlocks[0]?.value).toBe('else')
+      expect(wrapper.vm.allLines[2].indentLevel).toBe(0) // else should be unindented
+      expect(wrapper.vm.allLines[3].indentLevel).toBe(1) // else child should be indented
+      expect(wrapper.vm.allLines[3].parentLineId).toBe(wrapper.vm.allLines[2].id) // child of else
+      const secondUnindentedId = wrapper.vm.allLines[4].id
+
+      // Step 3: Drop second 'if' in the next unindented line
+      const secondIfBlock: CodeBlock = { id: 'if-2', type: 'control', value: 'if' }
+      await wrapper.vm.handleBlockDropped(secondUnindentedId, 0, secondIfBlock)
+
+      // Should have: if1, if1-child, else1, else1-child, if2, if2-child, unindented-next (7 lines)
+      expect(wrapper.vm.allLines).toHaveLength(7)
+      expect(wrapper.vm.allLines[4].placedBlocks[0]?.value).toBe('if') // second if
+      expect(wrapper.vm.allLines[4].indentLevel).toBe(0) // second if should be unindented
+      expect(wrapper.vm.allLines[5].indentLevel).toBe(1) // second if child should be indented
+      const finalUnindentedId = wrapper.vm.allLines[6].id
+
+      console.log('Before second else drop:')
+      wrapper.vm.allLines.forEach((line: any, index: number) => {
+        console.log(`Line ${index}: id=${line.id}, indent=${line.indentLevel}, blocks=[${line.placedBlocks.map((b: any) => b?.value || 'empty').join(', ')}]`)
+      })
+
+      // Step 4: Drop second 'else' in the final unindented line
+      const secondElseBlock: CodeBlock = { id: 'else-2', type: 'control', value: 'else' }
+      await wrapper.vm.handleBlockDropped(finalUnindentedId, 0, secondElseBlock)
+
+      console.log('After second else drop:')
+      wrapper.vm.allLines.forEach((line: any, index: number) => {
+        console.log(`Line ${index}: id=${line.id}, indent=${line.indentLevel}, parent=${line.parentLineId || 'none'}, blocks=[${line.placedBlocks.map((b: any) => b?.value || 'empty').join(', ')}]`)
+      })
+
+      // The second else should be in the unindented line we targeted
+      expect(wrapper.vm.allLines[6].placedBlocks[0]?.value).toBe('else')
+      expect(wrapper.vm.allLines[6].indentLevel).toBe(0) // CRITICAL: second else should be unindented
+      expect(wrapper.vm.allLines[6].parentLineId).toBe(wrapper.vm.allLines[4].parentLineId) // same parent as second if
+      
+      // The second else should also create its own indented child
+      expect(wrapper.vm.allLines[7].indentLevel).toBe(1) // second else child should be indented
+      expect(wrapper.vm.allLines[7].parentLineId).toBe(wrapper.vm.allLines[6].id) // child of second else
+    })
+
     it('should not accept drops when disabled', async () => {
       const wrapper = mount(CodeEditor, {
         props: {

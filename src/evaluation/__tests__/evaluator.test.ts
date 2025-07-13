@@ -340,6 +340,55 @@ describe('CodeEvaluator', () => {
       expect(result.grid![0][2]).toBe('special')
       expect(result.grid![0][3]).toBe('default')
     })
+
+    it('should evaluate if-else statements: p = green, if x == 2 then p = red else p = blue', () => {
+      const ast = createProgramAST([
+        createAssignmentAST('p', createLiteralAST('green', 'color')),
+        createConditionalWithElseAST(
+          createBinaryOperationAST('==', createVariableAST('x'), createLiteralAST(2, 'number')),
+          [createAssignmentAST('p', createLiteralAST('red', 'color'))],
+          [createAssignmentAST('p', createLiteralAST('blue', 'color'))]
+        )
+      ])
+
+      const result = evaluator.evaluate(ast, { width: 5, height: 2 })
+
+      expect(result.success).toBe(true)
+      
+      // x=2 should be red, all others should be blue (never green)
+      expect(result.grid![0][0]).toBe('blue')   // x=0
+      expect(result.grid![0][1]).toBe('blue')   // x=1  
+      expect(result.grid![0][2]).toBe('red')    // x=2
+      expect(result.grid![0][3]).toBe('blue')   // x=3
+      expect(result.grid![0][4]).toBe('blue')   // x=4
+      
+      // Second row should have same pattern
+      expect(result.grid![1][0]).toBe('blue')   // x=0
+      expect(result.grid![1][1]).toBe('blue')   // x=1
+      expect(result.grid![1][2]).toBe('red')    // x=2
+      expect(result.grid![1][3]).toBe('blue')   // x=3
+      expect(result.grid![1][4]).toBe('blue')   // x=4
+    })
+
+    it('should evaluate if-else with different comparison operators', () => {
+      const ast = createProgramAST([
+        createConditionalWithElseAST(
+          createBinaryOperationAST('<', createVariableAST('x'), createLiteralAST(2, 'number')),
+          [createAssignmentAST('p', createLiteralAST('left', 'color'))],
+          [createAssignmentAST('p', createLiteralAST('right', 'color'))]
+        )
+      ])
+
+      const result = evaluator.evaluate(ast, { width: 4, height: 1 })
+
+      expect(result.success).toBe(true)
+      
+      // x < 2: x=0,1 should be 'left', x=2,3 should be 'right'
+      expect(result.grid![0][0]).toBe('left')   // x=0 < 2
+      expect(result.grid![0][1]).toBe('left')   // x=1 < 2
+      expect(result.grid![0][2]).toBe('right')  // x=2 >= 2
+      expect(result.grid![0][3]).toBe('right')  // x=3 >= 2
+    })
   })
 
   describe('Performance', () => {
@@ -410,5 +459,18 @@ function createConditionalAST(
     type: 'Conditional',
     condition,
     thenBody
+  }
+}
+
+function createConditionalWithElseAST(
+  condition: BinaryOperationNode, 
+  thenBody: AssignmentNode[],
+  elseBody: AssignmentNode[]
+): ConditionalNode {
+  return {
+    type: 'Conditional',
+    condition,
+    thenBody,
+    elseBody
   }
 }

@@ -80,14 +80,26 @@ export class CodeParser {
       return null
     }
 
-    // If this is a conditional, find and parse its child statements
+    // If this is a conditional, find and parse its child statements and else clause
     if (statement.type === 'Conditional') {
       const conditional = statement as ConditionalNode
-      const childLines = structure.lines.filter(childLine => 
+      const currentLineIndex = structure.lines.indexOf(line)
+      
+      // Find child lines for the then body (direct children of this if statement)
+      const thenChildLines = structure.lines.filter(childLine => 
         childLine.parentLineId === line.id
       )
 
-      for (const childLine of childLines) {
+      for (const childLine of thenChildLines) {
+        // Skip else lines - they'll be handled separately
+        const childBlocks = childLine.placedBlocks.filter((block): block is CodeBlock => block !== null)
+        if (childBlocks.length > 0 && childBlocks[0].type === 'control' && childBlocks[0].value === 'else') {
+          continue
+        }
+        
+        // Mark child line as processed before parsing
+        processedLines.add(childLine.id)
+        
         const childIndex = structure.lines.indexOf(childLine)
         try {
           const childStatement = this.parseLineWithChildren(childLine, childIndex, structure, processedLines)
@@ -95,13 +107,71 @@ export class CodeParser {
             conditional.thenBody.push(childStatement)
           }
         } catch (error) {
-          // Re-throw with child line context
           throw new Error(`Error in nested statement: ${error instanceof Error ? error.message : 'Unknown error'}`)
+        }
+      }
+      
+      // Look for else statement that follows this if at the same level
+      const elseLine = this.findElseLine(structure, line, currentLineIndex)
+      if (elseLine) {
+        processedLines.add(elseLine.id)
+        
+        // Find child lines for the else body
+        const elseChildLines = structure.lines.filter(childLine => 
+          childLine.parentLineId === elseLine.id
+        )
+
+        conditional.elseBody = []
+        for (const childLine of elseChildLines) {
+          // Mark child line as processed before parsing
+          processedLines.add(childLine.id)
+          
+          const childIndex = structure.lines.indexOf(childLine)
+          try {
+            const childStatement = this.parseLineWithChildren(childLine, childIndex, structure, processedLines)
+            if (childStatement) {
+              conditional.elseBody.push(childStatement)
+            }
+          } catch (error) {
+            throw new Error(`Error in nested statement: ${error instanceof Error ? error.message : 'Unknown error'}`)
+          }
         }
       }
     }
 
     return statement
+  }
+
+  /**
+   * Find the else line that corresponds to an if statement
+   */
+  private findElseLine(structure: CodeStructure, ifLine: CodeLine, ifLineIndex: number): CodeLine | null {
+    // Look for else line that:
+    // 1. Comes after the if line
+    // 2. Has the same parent (is a sibling)
+    // 3. Contains an 'else' control block
+    
+    for (let i = ifLineIndex + 1; i < structure.lines.length; i++) {
+      const line = structure.lines[i]
+      
+      // Check if this line is an else statement
+      const blocks = line.placedBlocks.filter((block): block is CodeBlock => block !== null)
+      if (blocks.length > 0 && blocks[0].type === 'control' && blocks[0].value === 'else') {
+        // Check if it's at the same level (has same parent) as the if statement
+        if (line.parentLineId === ifLine.parentLineId) {
+          return line
+        }
+      }
+      
+      // If we encounter another if statement at the same level, stop looking
+      if (blocks.length > 0 && blocks[0].type === 'control' && blocks[0].value === 'if') {
+        if (line.parentLineId === ifLine.parentLineId) {
+          break
+        }
+      }
+    }
+    
+    return null
   }
 
   /**
@@ -113,6 +183,11 @@ export class CodeParser {
     
     // Skip empty lines
     if (blocks.length === 0) {
+      return null
+    }
+
+    // Skip else lines - they'll be handled as part of if-else parsing
+    if (blocks.length > 0 && blocks[0].type === 'control' && blocks[0].value === 'else') {
       return null
     }
 

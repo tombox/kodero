@@ -290,6 +290,50 @@ describe('CodeParser', () => {
       expect((thenStatement.value as LiteralNode).value).toBe('blue')
     })
 
+    it('should parse if-else statements with child blocks', () => {
+      const structure = createTestStructure([
+        // if x == 2
+        createTestLine([
+          { type: 'control', value: 'if' },
+          { type: 'variable', value: 'x' },
+          { type: 'operator', value: '==' },
+          { type: 'number', value: '2' }
+        ], 0, 0), // indent level 0, no parent (top level)
+        // indented: p = red
+        createTestLine([
+          { type: 'variable', value: 'p' },
+          { type: 'operator', value: '=' },
+          { type: 'color', value: 'red' }
+        ], 1, 1, 'line-0'), // indent level 1, parent line 0
+        // else (same level as if)
+        createTestLine([
+          { type: 'control', value: 'else' }
+        ], 2, 0), // indent level 0, no parent (same level as if)
+        // indented: p = blue
+        createTestLine([
+          { type: 'variable', value: 'p' },
+          { type: 'operator', value: '=' },
+          { type: 'color', value: 'blue' }
+        ], 3, 1, 'line-2') // indent level 1, parent line 2 (else line)
+      ])
+
+      const result = parser.parse(structure)
+
+      expect(result.success).toBe(true)
+      const conditional = result.ast!.body[0] as ConditionalNode
+      expect(conditional.type).toBe('Conditional')
+      expect(conditional.thenBody).toHaveLength(1)
+      expect(conditional.elseBody).toHaveLength(1)
+      
+      const thenStatement = conditional.thenBody[0] as AssignmentNode
+      expect(thenStatement.variable.name).toBe('p')
+      expect((thenStatement.value as LiteralNode).value).toBe('red')
+      
+      const elseStatement = conditional.elseBody[0] as AssignmentNode
+      expect(elseStatement.variable.name).toBe('p')
+      expect((elseStatement.value as LiteralNode).value).toBe('blue')
+    })
+
     it('should handle malformed if conditions', () => {
       const structure = createTestStructure([
         createTestLine([

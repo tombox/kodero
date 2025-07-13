@@ -215,13 +215,59 @@ function addNextLine(afterLineId: string) {
   const afterLine = findLineById(structure, afterLineId)
   if (!afterLine) return
 
+  // Find the last line that belongs to this block (including indented children)
   const afterIndex = structure.lines.findIndex(line => line.id === afterLineId)
+  let insertIndex = afterIndex + 1
   
+  // Look for any existing child lines that belong to this parent
+  // and insert the new line after the last child
+  for (let i = afterIndex + 1; i < structure.lines.length; i++) {
+    const line = structure.lines[i]
+    // If this line is a direct child of the afterLine, update insert position
+    if (line.parentLineId === afterLineId) {
+      insertIndex = i + 1
+    } else if (line.indentLevel <= afterLine.indentLevel) {
+      // If we hit a line at the same or lower indent level, stop looking
+      break
+    }
+  }
+  
+  // Determine the correct indent level for the next line
+  // If afterLine is unindented (level 0), new line should also be unindented
+  // If afterLine is indented, we need to check if it's a control structure or regular statement
+  let newIndentLevel = afterLine.indentLevel
+  let newParentLineId = afterLine.parentLineId
+  
+  // If the afterLine contains an 'else' block, the next line should be at the same level as the 'if'
+  // that this else belongs to, not the else itself
+  const hasElseBlock = afterLine.placedBlocks.some(block => 
+    block && block.type === 'control' && block.value === 'else'
+  )
+  
+  if (hasElseBlock) {
+    // For else lines, find the corresponding if line and use its level/parent
+    // Look backwards to find the matching if at the same level
+    for (let i = afterIndex - 1; i >= 0; i--) {
+      const prevLine = structure.lines[i]
+      if (prevLine.indentLevel === afterLine.indentLevel && 
+          prevLine.parentLineId === afterLine.parentLineId) {
+        const hasIfBlock = prevLine.placedBlocks.some(block => 
+          block && block.type === 'control' && block.value === 'if'
+        )
+        if (hasIfBlock) {
+          newIndentLevel = prevLine.indentLevel
+          newParentLineId = prevLine.parentLineId
+          break
+        }
+      }
+    }
+  }
+
   const newLine: CodeLine = {
-    id: `line-${Date.now()}`,
+    id: `line-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
     type: 'expression',
-    indentLevel: afterLine.indentLevel, // Same indent level
-    parentLineId: afterLine.parentLineId,
+    indentLevel: newIndentLevel,
+    parentLineId: newParentLineId,
     slots: [
       { id: 'slot-0', placeholder: 'drop here' }
     ],
@@ -230,9 +276,9 @@ function addNextLine(afterLineId: string) {
     maxSlots: 10
   }
   
-  // Insert after the current line
-  structure.lines.splice(afterIndex + 1, 0, newLine)
-  console.log(`Auto-added next line after ${afterLineId} at indent level ${afterLine.indentLevel}`)
+  // Insert after the last child line (or after the current line if no children)
+  structure.lines.splice(insertIndex, 0, newLine)
+  console.log(`Auto-added next line after ${afterLineId} and children at indent level ${newIndentLevel}`)
   emit('structure-changed', editorStructure.value)
 }
 
@@ -250,7 +296,7 @@ function addIndentedLine(parentLineId: string) {
   const parentIndex = structure.lines.findIndex(line => line.id === parentLineId)
   
   const newLine: CodeLine = {
-    id: `line-${Date.now()}`,
+    id: `line-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
     type: 'expression',
     indentLevel: parentLine.indentLevel + 1, // One level deeper
     parentLineId: parentLineId,

@@ -125,8 +125,10 @@ export class CodeEvaluator {
     if (conditionResult) {
       // Execute the then body if condition is true
       this.executeStatements(conditional.thenBody, context)
+    } else if (conditional.elseBody) {
+      // Execute the else body if condition is false and else body exists
+      this.executeStatements(conditional.elseBody, context)
     }
-    // TODO: Add else body support when needed
   }
 
   /**
