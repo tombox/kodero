@@ -76,11 +76,20 @@ function handleBlockDropped(lineId: string, slotIndex: number, blockData: CodeBl
 
   console.log(`Block dropped in CodeEditor: ${blockData.type}(${blockData.value}) -> ${lineId}[${slotIndex}]`)
 
-  // Check if this block came from another slot in the editor and remove it
-  removeBlockFromOtherSlots(blockData.id, lineId, slotIndex)
+  // Create a unique copy of the block for the editor to avoid ID conflicts
+  const uniqueBlock: CodeBlock = {
+    ...blockData,
+    id: `placed-${lineId}-${slotIndex}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+  }
 
-  // Place the block in the new slot
-  line.placedBlocks[slotIndex] = blockData
+  // Check if this block came from another slot in the editor and remove it
+  // Only do this if the original block ID suggests it's already placed (starts with 'placed-')
+  if (blockData.id.startsWith('placed-')) {
+    removeBlockFromOtherSlots(blockData.id, lineId, slotIndex)
+  }
+
+  // Place the unique block in the new slot
+  line.placedBlocks[slotIndex] = uniqueBlock
   
   // Auto-grow slots: if this was the last slot and we're within maxSlots limit, add a new slot
   const maxSlots = line.maxSlots || 10
@@ -105,7 +114,7 @@ function handleBlockDropped(lineId: string, slotIndex: number, blockData: CodeBl
     addIndentedLine(lineId)
   }
   
-  emit('block-placed', lineId, line.slots[slotIndex].id, blockData)
+  emit('block-placed', lineId, line.slots[slotIndex].id, uniqueBlock)
   emit('structure-changed', editorStructure.value)
   
   // NEW: Trigger real-time evaluation
