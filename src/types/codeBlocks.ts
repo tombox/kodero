@@ -88,7 +88,7 @@ export const AVAILABLE_BLOCKS: readonly CodeBlock[] = [
   { id: 'num-3', type: 'number', value: '3' },
   { id: 'num-4', type: 'number', value: '4' },
   
-  // Operators
+  // Assignment & Comparison Operators
   { id: 'op-assign', type: 'operator', value: '=' },
   { id: 'op-equals', type: 'operator', value: '==' },
   { id: 'op-not-equals', type: 'operator', value: '!=' },
@@ -96,6 +96,12 @@ export const AVAILABLE_BLOCKS: readonly CodeBlock[] = [
   { id: 'op-greater', type: 'operator', value: '>' },
   { id: 'op-less-equal', type: 'operator', value: '<=' },
   { id: 'op-greater-equal', type: 'operator', value: '>=' },
+  
+  // Math Operators
+  { id: 'op-plus', type: 'operator', value: '+' },
+  { id: 'op-minus', type: 'operator', value: '-' },
+  { id: 'op-multiply', type: 'operator', value: '*' },
+  { id: 'op-divide', type: 'operator', value: '/' },
   
   // Colors
   { id: 'color-red', type: 'color', value: 'red' },

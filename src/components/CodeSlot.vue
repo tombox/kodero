@@ -181,7 +181,7 @@ function handleKeydown(event: any) {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 160px;
+  width: 80px;
   height: 60px;
   padding: 4px;
   border: 2px dashed #dee2e6;
@@ -204,13 +204,13 @@ function handleKeydown(event: any) {
 
 /* Size variants */
 .code-slot--small {
-  width: 120px;
+  width: 60px;
   height: 48px;
   padding: 4px;
 }
 
 .code-slot--large {
-  width: 200px;
+  width: 100px;
   height: 72px;
   padding: 4px;
 }
@@ -308,19 +308,19 @@ function handleKeydown(event: any) {
 /* Responsive design */
 @media (max-width: 768px) {
   .code-slot {
-    width: 140px;
+    width: 70px;
     height: 52px;
     padding: 4px;
   }
   
   .code-slot--small {
-    width: 110px;
+    width: 55px;
     height: 44px;
     padding: 4px;
   }
   
   .code-slot--large {
-    width: 170px;
+    width: 85px;
     height: 64px;
     padding: 4px;
   }

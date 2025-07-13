@@ -4,6 +4,7 @@ import CanvasGrid from '../components/CanvasGrid.vue'
 import GoalGrid from '../components/GoalGrid.vue'
 import CodeBlock from '../components/CodeBlock.vue'
 import CodeSlot from '../components/CodeSlot.vue'
+import CodeEditor from '../components/CodeEditor.vue'
 import Toolbox from '../components/Toolbox.vue'
 import { AVAILABLE_BLOCKS } from '../types/codeBlocks'
 import { getGridComparisonResult } from '../utils/gridComparison'
@@ -78,6 +79,21 @@ function handleBlockDropped(targetSlotIndex: number, blockData: any) {
 function handleBlockRemoved(slotIndex: number, block: any) {
   console.log(`Block removed from slot ${slotIndex}:`, block)
   slotBlocks.value[slotIndex] = null
+}
+
+// Phase 4 demo state - CodeEditor
+const selectedTemplate = ref<'EXPRESSION' | 'IF_ELSE'>('EXPRESSION')
+
+function handleCodeEditorStructureChanged(structure: any) {
+  console.log('CodeEditor structure changed:', structure)
+}
+
+function handleCodeExecuted(result: any) {
+  console.log('Code executed:', result)
+}
+
+function switchTemplate() {
+  selectedTemplate.value = selectedTemplate.value === 'EXPRESSION' ? 'IF_ELSE' : 'EXPRESSION'
 }
 </script>
 
@@ -185,7 +201,7 @@ function handleBlockRemoved(slotIndex: number, block: any) {
 
     <!-- Phase 3: Drag & Drop System -->
     <section class="demo-section">
-      <h2>🎯 Phase 3: Drag & Drop System (In Progress)</h2>
+      <h2>🎯 Phase 3: Drag & Drop System (Completed)</h2>
       
       <div class="dragdrop-demo">
         <div class="demo-instruction">
@@ -275,10 +291,47 @@ function handleBlockRemoved(slotIndex: number, block: any) {
         <div class="coming-soon">
           <p>🚧 <strong>Still to come:</strong></p>
           <ul>
-            <li>CodeEditor component with nested slot support</li>
             <li>Real-time code evaluation and grid updates</li>
             <li>Advanced drag feedback and animations</li>
             <li>Keyboard accessibility for drag operations</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- Phase 4: Code Editor System -->
+    <section class="demo-section">
+      <h2>🏗️ Phase 4: Code Editor System (Completed)</h2>
+      
+      <div class="codeeditor-demo">
+        <div class="demo-instruction">
+          <p>🎯 <strong>Try it out:</strong> Build flexible expressions like "pixel = red + yellow"!</p>
+          <p>📝 <strong>Features:</strong> Dynamic slots - add/remove as needed for complex expressions</p>
+          <p>🔄 <strong>Switch templates:</strong> Toggle between free-form expressions and conditional structures</p>
+          <p>🎨 <strong>Experiment:</strong> Try color mixing, math operations, and creative combinations!</p>
+        </div>
+        
+        <div class="editor-controls">
+          <button @click="switchTemplate" class="template-switch-btn">
+            Switch to {{ selectedTemplate === 'EXPRESSION' ? 'IF/ELSE' : 'EXPRESSION' }} Template
+          </button>
+        </div>
+        
+        <div class="editor-container">
+          <CodeEditor
+            :template="selectedTemplate"
+            @structure-changed="handleCodeEditorStructureChanged"
+            @code-executed="handleCodeExecuted"
+          />
+        </div>
+        
+        <div class="coming-soon">
+          <p>🚧 <strong>Coming in Phase 5:</strong></p>
+          <ul>
+            <li>Real-time code evaluation engine</li>
+            <li>Live grid updates as you build code</li>
+            <li>Variable assignment and conditional logic</li>
+            <li>Pattern generation from code structures</li>
           </ul>
         </div>
       </div>
@@ -514,6 +567,52 @@ function handleBlockRemoved(slotIndex: number, block: any) {
   text-align: center;
 }
 
+/* Code Editor Demo Styles */
+.codeeditor-demo {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.editor-controls {
+  display: flex;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.template-switch-btn {
+  background-color: #6f42c1;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(111, 66, 193, 0.2);
+}
+
+.template-switch-btn:hover {
+  background-color: #5a2d91;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(111, 66, 193, 0.3);
+}
+
+.editor-container {
+  display: flex;
+  justify-content: center;
+  padding: 1rem;
+  background-color: #f8f9fa;
+  border-radius: 12px;
+  border: 1px solid #dee2e6;
+}
+
+.editor-container :deep(.code-editor) {
+  width: 100%;
+  max-width: 800px;
+}
+
 /* Coming Soon Styles */
 .coming-soon {
   text-align: center;
@@ -591,6 +690,19 @@ function handleBlockRemoved(slotIndex: number, block: any) {
   .slot-wrapper {
     width: 100%;
     max-width: 200px;
+  }
+  
+  .template-switch-btn {
+    padding: 10px 20px;
+    font-size: 12px;
+  }
+  
+  .editor-container {
+    padding: 0.5rem;
+  }
+  
+  .editor-container :deep(.code-editor) {
+    max-width: 100%;
   }
 }
 </style>
