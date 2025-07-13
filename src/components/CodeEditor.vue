@@ -28,13 +28,13 @@ const emit = defineEmits<{
 
 // Reactive state
 const editorStructure = ref<CodeStructure>(
-  props.structure || structuredClone(CODE_TEMPLATES[props.template])
+  props.structure || JSON.parse(JSON.stringify(CODE_TEMPLATES[props.template]))
 )
 
 // Watch for prop changes
 watch(() => props.template, (newTemplate) => {
   if (newTemplate && !props.structure) {
-    editorStructure.value = structuredClone(CODE_TEMPLATES[newTemplate])
+    editorStructure.value = JSON.parse(JSON.stringify(CODE_TEMPLATES[newTemplate]))
     emit('structure-changed', editorStructure.value)
   }
 })
@@ -42,8 +42,8 @@ watch(() => props.template, (newTemplate) => {
 watch(() => props.structure, (newStructure) => {
   if (newStructure) {
     try {
-      editorStructure.value = structuredClone(newStructure)
-    } catch (error) {
+      editorStructure.value = JSON.parse(JSON.stringify(newStructure))
+    } catch {
       // Fallback for non-cloneable objects in tests
       editorStructure.value = JSON.parse(JSON.stringify(newStructure))
     }
@@ -282,25 +282,28 @@ function executeCode() {
 </script>
 
 <template>
-  <div class="code-editor" :class="{ 'code-editor--disabled': disabled }">
+  <div
+    class="code-editor"
+    :class="{ 'code-editor--disabled': disabled }"
+  >
     <div class="code-editor__header">
       <h3 class="code-editor__title">
         Code Editor
       </h3>
       <div class="code-editor__actions">
         <button 
-          @click="addLine()"
           :disabled="disabled || allLines.length >= maxLines"
           class="code-editor__btn code-editor__btn--add"
           title="Add line"
+          @click="addLine()"
         >
           + Add Line
         </button>
         <button 
-          @click="executeCode"
           :disabled="disabled"
           class="code-editor__btn code-editor__btn--execute"
           title="Execute code"
+          @click="executeCode"
         >
           ▶ Run
         </button>
@@ -309,7 +312,10 @@ function executeCode() {
 
     <div class="code-editor__body">
       <!-- Unified line structure with auto-indenting -->
-      <div v-if="allLines.length > 0" class="code-lines">
+      <div
+        v-if="allLines.length > 0"
+        class="code-lines"
+      >
         <div 
           v-for="line in allLines" 
           :key="line.id"
@@ -336,9 +342,9 @@ function executeCode() {
           
           <button 
             v-if="!disabled && allLines.length > 1"
-            @click="removeLine(line.id)"
             class="code-line__remove"
             title="Remove line"
+            @click="removeLine(line.id)"
           >
             ×
           </button>

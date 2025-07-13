@@ -108,12 +108,17 @@ function handleCodeExecuted(result: any) {
       <div class="grid-demo">
         <div class="grid-container">
           <CanvasGrid :grid="sampleCanvasGrid" />
-          <div class="vs">VS</div>
+          <div class="vs">
+            VS
+          </div>
           <GoalGrid :goal-grid="sampleGoalGrid" />
         </div>
         
         <div class="grid-status">
-          <div class="status-item" :class="{ complete: comparisonResult.isComplete }">
+          <div
+            class="status-item"
+            :class="{ complete: comparisonResult.isComplete }"
+          >
             <strong>Status:</strong> {{ comparisonResult.isComplete ? 'Complete! 🎉' : 'Incomplete' }}
           </div>
           <div class="status-item">
@@ -122,7 +127,10 @@ function handleCodeExecuted(result: any) {
           <div class="status-item">
             <strong>Cells:</strong> {{ comparisonResult.matchingCells }}/{{ comparisonResult.totalCells }}
           </div>
-          <button @click="toggleGridCompletion" class="demo-button">
+          <button
+            class="demo-button"
+            @click="toggleGridCompletion"
+          >
             {{ comparisonResult.isComplete ? 'Make Incomplete' : 'Make Complete' }}
           </button>
         </div>
@@ -161,36 +169,78 @@ function handleCodeExecuted(result: any) {
         <div class="block-showcase">
           <div class="block-category">
             <h4>Variables</h4>
-            <CodeBlock type="variable" value="x" />
-            <CodeBlock type="variable" value="y" />
-            <CodeBlock type="variable" value="p" />
+            <CodeBlock
+              type="variable"
+              value="x"
+            />
+            <CodeBlock
+              type="variable"
+              value="y"
+            />
+            <CodeBlock
+              type="variable"
+              value="p"
+            />
           </div>
           
           <div class="block-category">
             <h4>Numbers</h4>
-            <CodeBlock type="number" value="0" />
-            <CodeBlock type="number" value="1" />
-            <CodeBlock type="number" value="2" />
+            <CodeBlock
+              type="number"
+              value="0"
+            />
+            <CodeBlock
+              type="number"
+              value="1"
+            />
+            <CodeBlock
+              type="number"
+              value="2"
+            />
           </div>
           
           <div class="block-category">
             <h4>Operators</h4>
-            <CodeBlock type="operator" value="=" />
-            <CodeBlock type="operator" value="==" />
-            <CodeBlock type="operator" value="<" />
+            <CodeBlock
+              type="operator"
+              value="="
+            />
+            <CodeBlock
+              type="operator"
+              value="=="
+            />
+            <CodeBlock
+              type="operator"
+              value="<"
+            />
           </div>
           
           <div class="block-category">
             <h4>Colors</h4>
-            <CodeBlock type="color" value="red" />
-            <CodeBlock type="color" value="blue" />
-            <CodeBlock type="color" value="green" />
+            <CodeBlock
+              type="color"
+              value="red"
+            />
+            <CodeBlock
+              type="color"
+              value="blue"
+            />
+            <CodeBlock
+              type="color"
+              value="green"
+            />
           </div>
           
           <div class="block-category">
             <h4>Control</h4>
-            <CodeBlock type="control" value="if" />
-            <CodeBlock type="control" value="else" />
+            <CodeBlock
+              type="control"
+              value="if"
+            />
+            <CodeBlock
+              type="control"
+              value="else"
+            />
           </div>
         </div>
       </div>

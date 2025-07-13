@@ -72,7 +72,7 @@ function handleDragEnter(event: any) {
   isDragOver.value = true
 }
 
-function handleDragLeave(event: any) {
+function handleDragLeave() {
   if (props.disabled) return
   
   isDragOver.value = false
@@ -104,7 +104,7 @@ function handleDrop(event: any) {
     }
     
     emit('block-dropped', blockData)
-  } catch (error) {
+  } catch {
     emit('drop-rejected', 'Invalid drop data format')
   }
 }
@@ -152,7 +152,10 @@ function handleKeydown(event: any) {
     </div>
     
     <!-- Placed block or placeholder -->
-    <div v-if="placedBlock" class="code-slot__content">
+    <div
+      v-if="placedBlock"
+      class="code-slot__content"
+    >
       <CodeBlock
         :id="placedBlock.id"
         :type="placedBlock.type"
@@ -162,14 +165,17 @@ function handleKeydown(event: any) {
       <button
         v-if="!disabled"
         class="code-slot__remove"
-        @click="handleRemoveBlock"
         aria-label="Remove block"
+        @click="handleRemoveBlock"
       >
         ×
       </button>
     </div>
     
-    <div v-else-if="placeholder" class="code-slot__placeholder">
+    <div
+      v-else-if="placeholder"
+      class="code-slot__placeholder"
+    >
       {{ placeholder }}
     </div>
   </div>

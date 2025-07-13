@@ -53,8 +53,6 @@ const ariaLabel = computed(() => {
   return `Code block: ${props.type} ${props.value}`
 })
 
-const isDraggable = computed(() => props.disabled ? 'false' : 'true')
-
 const tabIndex = computed(() => props.disabled ? -1 : 0)
 
 const ariaGrabbed = computed(() => isDragging.value ? 'true' : 'false')
@@ -65,7 +63,7 @@ function handleClick(event: any) {
   emit('click', event)
 }
 
-function handleMouseDown(event: any) {
+function handleMouseDown() {
   // Don't prevent default - let the browser handle drag initiation
 }
 
