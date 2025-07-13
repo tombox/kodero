@@ -35,6 +35,7 @@ const emit = defineEmits<{
 const editorStructure = ref<CodeStructure>(
   props.structure || JSON.parse(JSON.stringify(CODE_TEMPLATES[props.template]))
 )
+const evaluationErrors = ref<any[]>([])
 
 // Watch for prop changes
 watch(() => props.template, (newTemplate) => {
@@ -59,6 +60,27 @@ watch(() => props.structure, (newStructure) => {
 const allLines = computed(() => 
   editorStructure.value ? editorStructure.value.lines : []
 )
+
+// Check if a line has syntax errors
+function lineHasError(lineId: string): boolean {
+  // Find the index of this line
+  const lineIndex = editorStructure.value.lines.findIndex(line => line.id === lineId)
+  if (lineIndex === -1) return false
+  
+  // Check if any error references this line (1-based line numbers in errors)
+  return evaluationErrors.value.some(error => 
+    error.line === lineIndex + 1
+  )
+}
+
+// Get error message for a line
+function getLineError(lineId: string): string | null {
+  const lineIndex = editorStructure.value.lines.findIndex(line => line.id === lineId)
+  if (lineIndex === -1) return null
+  
+  const error = evaluationErrors.value.find(error => error.line === lineIndex + 1)
+  return error ? error.message : null
+}
 
 // Helper functions
 function getSlotKey(lineId: string, slotIndex: number): string {
@@ -356,6 +378,7 @@ function executeCode() {
     
     if (result.success && result.grid) {
       console.log('Code evaluation successful:', result.grid)
+      evaluationErrors.value = [] // Clear errors on success
       emit('grid-updated', result.grid)
       emit('code-executed', { 
         structure: editorStructure.value, 
@@ -364,7 +387,9 @@ function executeCode() {
       })
     } else {
       console.warn('Code evaluation failed:', result.errors, result.parseErrors)
-      emit('evaluation-error', [...(result.errors || []), ...(result.parseErrors || [])])
+      evaluationErrors.value = [...(result.errors || []), ...(result.parseErrors || [])]
+      console.log('Setting evaluation errors:', evaluationErrors.value)
+      emit('evaluation-error', evaluationErrors.value)
       emit('code-executed', { 
         structure: editorStructure.value, 
         success: false,
@@ -374,7 +399,8 @@ function executeCode() {
     }
   } catch (error) {
     console.error('Code evaluation error:', error)
-    emit('evaluation-error', [{ message: error instanceof Error ? error.message : 'Unknown error' }])
+    evaluationErrors.value = [{ message: error instanceof Error ? error.message : 'Unknown error' }]
+    emit('evaluation-error', evaluationErrors.value)
     emit('code-executed', { 
       structure: editorStructure.value, 
       success: false,
@@ -412,8 +438,10 @@ defineExpose({
           :class="[
             `code-line--${line.type}`,
             `code-line--indent-${line.indentLevel}`,
-            { 'code-line--indented': line.indentLevel > 0 }
+            { 'code-line--indented': line.indentLevel > 0 },
+            { 'code-line--error': lineHasError(line.id) }
           ]"
+          :title="getLineError(line.id) || ''"
         >
           <div class="code-line__slots">
             <CodeSlot
@@ -544,6 +572,17 @@ defineExpose({
   transform: scale(1.1);
 }
 
+/* Error state for lines with syntax errors */
+.code-line--error {
+  border-color: #dc3545;
+  border-width: 2px;
+  background-color: #f8d7da;
+}
+
+.code-line--error:hover {
+  border-color: #bd2130;
+  box-shadow: 0 2px 8px rgba(220, 53, 69, 0.2);
+}
 
 /* Responsive design */
 @media (max-width: 768px) {

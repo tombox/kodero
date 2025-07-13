@@ -44,7 +44,7 @@ export class CodeParser {
       } catch (error) {
         const errorType = (error as any).errorType || 'syntax'
         errors.push({
-          line: i,
+          line: i + 1,  // Convert to 1-based line number
           message: error instanceof Error ? error.message : 'Unknown parsing error',
           type: errorType
         })
@@ -274,6 +274,7 @@ export class CodeParser {
       location: { line: lineIndex }
     }
 
+    // Parse the value - this will throw if the value is invalid
     const value = this.parseValue(blocks[2], lineIndex)
 
     return {
