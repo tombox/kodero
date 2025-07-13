@@ -50,19 +50,22 @@ const currentLevelData = ref(levels.value[currentLevel.value - 1])
 
 // Event handlers
 function handleLevelComplete(level: number) {
-  console.log(`Level ${level} completed!`)
+  console.log(`Level ${level} completed! (showing win modal)`)
+  // Level is complete, win modal is shown, but don't advance yet
+}
+
+function handleLevelContinue(level: number) {
+  console.log(`Level ${level} continue clicked, advancing to next level`)
   
-  // Show completion message (in a real game, this might trigger achievements, score tracking, etc.)
-  setTimeout(() => {
-    if (level < levels.value.length) {
-      // Advance to next level
-      currentLevel.value = level + 1
-      currentLevelData.value = levels.value[currentLevel.value - 1]
-    } else {
-      // All levels completed!
-      console.log('All levels completed! 🎉')
-    }
-  }, 2000)
+  if (level < levels.value.length) {
+    // Advance to next level
+    currentLevel.value = level + 1
+    currentLevelData.value = levels.value[currentLevel.value - 1]
+    console.log(`Advanced to level ${currentLevel.value}`)
+  } else {
+    // All levels completed!
+    console.log('All levels completed! 🎉')
+  }
 }
 
 function handleLevelRestart(level: number) {
@@ -78,6 +81,7 @@ function handleLevelRestart(level: number) {
       :goal-grid="currentLevelData.goalGrid"
       :grid-size="{ width: 5, height: 5 }"
       @level-complete="handleLevelComplete"
+      @level-continue="handleLevelContinue"
       @level-restart="handleLevelRestart"
     />
   </div>

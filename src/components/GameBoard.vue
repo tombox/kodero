@@ -31,6 +31,7 @@ const props = withDefaults(defineProps<Props>(), {
 // Events
 const emit = defineEmits<{
   'level-complete': [level: number]
+  'level-continue': [level: number]
   'level-restart': [level: number]
 }>()
 
@@ -56,18 +57,28 @@ watch(() => canvasGrid.value, (newGrid) => {
     isComplete.value = true
     showWinAnimation.value = true
     
-    // Hide animation after 3 seconds
-    setTimeout(() => {
-      showWinAnimation.value = false
-    }, 3000)
-    
-    // Emit level complete event
+    // Emit level complete event (but keep modal open until user clicks Continue)
     emit('level-complete', props.level)
   } else if (!comparisonResult.value.isComplete && isComplete.value) {
     // Level no longer complete (user changed code)
     isComplete.value = false
     showWinAnimation.value = false
   }
+}, { deep: true })
+
+// Watch for level/goal changes and reset the game state
+watch(() => [props.level, props.goalGrid], ([newLevel, newGoalGrid], [oldLevel]) => {
+  console.log(`GameBoard: Level changed from ${oldLevel} to ${newLevel}`)
+  
+  // Reset game state for new level
+  canvasGrid.value = Array(props.gridSize.height).fill(null).map(() => 
+    Array(props.gridSize.width).fill('')
+  )
+  isComplete.value = false
+  showWinAnimation.value = false
+  
+  // Update comparison result with new goal
+  comparisonResult.value = getGridComparisonResult(canvasGrid.value, newGoalGrid as string[][])
 }, { deep: true })
 
 // Event handlers
@@ -100,15 +111,16 @@ function restartLevel() {
 }
 
 function nextLevel() {
-  // Hide animation and let parent handle level progression
+  console.log('GameBoard: Continue button clicked, advancing to next level')
+  // Hide animation and emit level continue event to advance to next level
   showWinAnimation.value = false
-  // Parent component will handle advancing to next level
+  emit('level-continue', props.level)
 }
 
 // Available blocks for the toolbox (filtered for this level)
 const levelBlocks = computed(() => {
   // For now, show all blocks. Later levels could restrict available blocks
-  return props.availableBlocks
+  return [...props.availableBlocks] // Create a mutable copy
 })
 
 // Debug: Log current grid state
@@ -158,6 +170,7 @@ console.log('GameBoard goalGrid:', props.goalGrid)
           <p>Build your pattern here</p>
         </div>
         <CodeEditor
+          :key="`level-${level}`"
           template="UNIFIED"
           :enable-evaluation="true"
           @structure-changed="handleCodeEditorStructureChanged"
@@ -176,7 +189,8 @@ console.log('GameBoard goalGrid:', props.goalGrid)
             <p>Match this pattern</p>
           </div>
           <GoalGrid 
-            :goal-grid="goalGrid"
+            :key="`goal-${level}`"
+            :goal-grid="props.goalGrid"
             class="goal-grid"
           />
         </div>
@@ -223,7 +237,7 @@ console.log('GameBoard goalGrid:', props.goalGrid)
             </div>
             <button 
               class="next-btn"
-              @click="nextLevel"
+              @click.stop="nextLevel"
             >
               Continue
             </button>
