@@ -4,6 +4,23 @@ import CodeEditor from '../CodeEditor.vue'
 import CodeSlot from '../CodeSlot.vue'
 import type { CodeBlock } from '../../types/codeBlocks'
 
+// Mock the evaluation service
+vi.mock('../../evaluation', () => ({
+  evaluationService: {
+    evaluate: vi.fn(() => ({
+      success: true,
+      grid: [
+        ['gray', 'gray', 'gray', 'gray', 'gray'],
+        ['gray', 'gray', 'gray', 'gray', 'gray'],
+        ['gray', 'gray', 'gray', 'gray', 'gray'],
+        ['gray', 'gray', 'gray', 'gray', 'gray'],
+        ['gray', 'gray', 'gray', 'gray', 'gray']
+      ],
+      errors: []
+    }))
+  }
+}))
+
 // Mock CodeSlot component
 vi.mock('../CodeSlot.vue', () => ({
   default: {
@@ -179,7 +196,8 @@ describe('CodeEditor', () => {
     it('should handle block drops in unified template', async () => {
       const wrapper = mount(CodeEditor, {
         props: {
-          template: 'UNIFIED'
+          template: 'UNIFIED',
+          enableEvaluation: false
         }
       })
       
@@ -193,7 +211,8 @@ describe('CodeEditor', () => {
     it('should handle block removal in unified template', async () => {
       const wrapper = mount(CodeEditor, {
         props: {
-          template: 'UNIFIED'
+          template: 'UNIFIED',
+          enableEvaluation: false
         }
       })
       
@@ -207,7 +226,8 @@ describe('CodeEditor', () => {
     it('should auto-grow slots in unified template', async () => {
       const wrapper = mount(CodeEditor, {
         props: {
-          template: 'UNIFIED'
+          template: 'UNIFIED',
+          enableEvaluation: false
         }
       })
       
@@ -226,7 +246,8 @@ describe('CodeEditor', () => {
     it('should support auto-indenting with control blocks', async () => {
       const wrapper = mount(CodeEditor, {
         props: {
-          template: 'UNIFIED'
+          template: 'UNIFIED',
+          enableEvaluation: false
         }
       })
       
@@ -296,7 +317,8 @@ describe('CodeEditor', () => {
     it('should emit structure changes when template changes', async () => {
       const wrapper = mount(CodeEditor, {
         props: {
-          template: 'UNIFIED'
+          template: 'UNIFIED',
+          enableEvaluation: false
         }
       })
       

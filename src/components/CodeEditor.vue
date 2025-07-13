@@ -4,18 +4,21 @@ import CodeSlot from './CodeSlot.vue'
 import type { CodeStructure, CodeLine, CodeTemplateKey } from '../types/codeStructures'
 import { CODE_TEMPLATES } from '../types/codeStructures'
 import type { CodeBlock } from '../types/codeBlocks'
+import { evaluationService } from '../evaluation'
 
 interface Props {
   template?: CodeTemplateKey
   structure?: CodeStructure
   disabled?: boolean
   maxLines?: number
+  enableEvaluation?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
   template: 'UNIFIED',
   disabled: false,
-  maxLines: 10
+  maxLines: 10,
+  enableEvaluation: true
 })
 
 // Events
@@ -24,6 +27,8 @@ const emit = defineEmits<{
   'block-placed': [lineId: string, slotId: string, block: CodeBlock]
   'block-removed': [lineId: string, slotId: string, block: CodeBlock]
   'code-executed': [result: any]
+  'grid-updated': [grid: string[][]]
+  'evaluation-error': [errors: any[]]
 }>()
 
 // Reactive state
@@ -102,6 +107,11 @@ function handleBlockDropped(lineId: string, slotIndex: number, blockData: CodeBl
   
   emit('block-placed', lineId, line.slots[slotIndex].id, blockData)
   emit('structure-changed', editorStructure.value)
+  
+  // NEW: Trigger real-time evaluation
+  if (props.enableEvaluation) {
+    executeCode()
+  }
 }
 
 function handleBlockRemoved(lineId: string, slotIndex: number, block: CodeBlock) {
@@ -133,6 +143,11 @@ function handleBlockRemoved(lineId: string, slotIndex: number, block: CodeBlock)
   
   emit('block-removed', lineId, line.slots[slotIndex].id, block)
   emit('structure-changed', editorStructure.value)
+  
+  // NEW: Trigger real-time evaluation
+  if (props.enableEvaluation) {
+    executeCode()
+  }
 }
 
 function removeBlockFromOtherSlots(blockId: string, targetLineId: string, targetSlotIndex: number) {
@@ -275,10 +290,48 @@ function removeLine(lineId: string) {
 
 // Code execution
 function executeCode() {
-  // This will be implemented in Phase 5
-  console.log('Code execution will be implemented in Phase 5')
-  emit('code-executed', { structure: editorStructure.value })
+  try {
+    // Evaluate the current structure using the evaluation service
+    const result = evaluationService.evaluate(editorStructure.value, { width: 5, height: 5 })
+    
+    if (result.success && result.grid) {
+      console.log('Code evaluation successful:', result.grid)
+      emit('grid-updated', result.grid)
+      emit('code-executed', { 
+        structure: editorStructure.value, 
+        grid: result.grid,
+        success: true
+      })
+    } else {
+      console.warn('Code evaluation failed:', result.errors, result.parseErrors)
+      emit('evaluation-error', [...(result.errors || []), ...(result.parseErrors || [])])
+      emit('code-executed', { 
+        structure: editorStructure.value, 
+        success: false,
+        errors: result.errors,
+        parseErrors: result.parseErrors
+      })
+    }
+  } catch (error) {
+    console.error('Code evaluation error:', error)
+    emit('evaluation-error', [{ message: error instanceof Error ? error.message : 'Unknown error' }])
+    emit('code-executed', { 
+      structure: editorStructure.value, 
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    })
+  }
 }
+
+// Expose functions for external access (tests, etc.)
+defineExpose({
+  executeCode,
+  handleBlockDropped,
+  handleBlockRemoved,
+  addLine,
+  removeLine,
+  allLines
+})
 </script>
 
 <template>

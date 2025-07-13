@@ -92,6 +92,20 @@ function handleCodeExecuted(result: any) {
   console.log('Code executed:', result)
 }
 
+function handleGridUpdated(grid: string[][]) {
+  console.log('Grid updated from code evaluation:', grid)
+  // Update the canvas grid with the evaluated result
+  sampleCanvasGrid.value = grid
+  
+  // Update comparison result in real-time
+  comparisonResult.value = getGridComparisonResult(sampleCanvasGrid.value, sampleGoalGrid.value)
+}
+
+function handleEvaluationError(errors: any[]) {
+  console.warn('Code evaluation errors:', errors)
+  // Could show error indicators in the UI here
+}
+
 </script>
 
 <template>
@@ -363,17 +377,20 @@ function handleCodeExecuted(result: any) {
             :template="selectedTemplate"
             @structure-changed="handleCodeEditorStructureChanged"
             @code-executed="handleCodeExecuted"
+            @grid-updated="handleGridUpdated"
+            @evaluation-error="handleEvaluationError"
           />
         </div>
         
-        <div class="coming-soon">
-          <p>🚧 <strong>Coming in Phase 5:</strong></p>
+        <div class="phase5-demo">
+          <p>✨ <strong>NEW: Phase 5 Complete!</strong></p>
           <ul>
-            <li>Real-time code evaluation engine</li>
-            <li>Live grid updates as you build code</li>
-            <li>Variable assignment and conditional logic</li>
-            <li>Pattern generation from code structures</li>
+            <li>✅ Real-time code evaluation engine</li>
+            <li>✅ Live grid updates as you build code</li>
+            <li>✅ Variable assignment (try: p = red)</li>
+            <li>✅ Pattern generation from code structures</li>
           </ul>
+          <p>🎯 <strong>Try it:</strong> Drag blocks to create "p = red" and watch the grid update in real-time!</p>
         </div>
       </div>
     </section>
@@ -628,6 +645,33 @@ function handleCodeExecuted(result: any) {
 .editor-container :deep(.code-editor) {
   width: 100%;
   max-width: 800px;
+}
+
+/* Phase 5 Demo Styles */
+.phase5-demo {
+  text-align: center;
+  padding: 2rem;
+  background-color: #e8f5e8;
+  border-radius: 8px;
+  border: 2px solid #28a745;
+}
+
+.phase5-demo p {
+  margin-bottom: 1rem;
+  color: #155724;
+  font-weight: 500;
+}
+
+.phase5-demo ul {
+  text-align: left;
+  max-width: 400px;
+  margin: 0 auto 1rem auto;
+  color: #155724;
+}
+
+.phase5-demo li {
+  margin-bottom: 0.5rem;
+  font-weight: 500;
 }
 
 /* Coming Soon Styles */
