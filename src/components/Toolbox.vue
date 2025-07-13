@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import CodeBlock from './CodeBlock.vue'
 import type { CodeBlock as CodeBlockType, BlockType } from '../types/codeBlocks'
 import { BLOCK_CATEGORIES } from '../types/codeBlocks'
@@ -35,6 +35,7 @@ const emit = defineEmits<{
 // Reactive state
 const searchTerm = ref('')
 const selectedBlocks = ref<Set<string>>(new Set())
+const activeTab = ref<BlockType | 'all'>('all')
 
 // Computed properties
 const filteredBlocks = computed(() => {
@@ -75,6 +76,29 @@ const blocksByCategory = computed(() => {
   })
 
   return grouped
+})
+
+// Get available tabs (categories with blocks)
+const availableTabs = computed(() => {
+  if (!props.groupByCategory || !blocksByCategory.value) return []
+  
+  const tabs = Array.from(blocksByCategory.value.keys())
+  return ['all' as const, ...tabs]
+})
+
+// Get blocks for the active tab
+const activeTabBlocks = computed(() => {
+  if (!props.groupByCategory) return filteredBlocks.value
+  
+  if (activeTab.value === 'all') {
+    return filteredBlocks.value
+  }
+  
+  if (blocksByCategory.value) {
+    return blocksByCategory.value.get(activeTab.value as BlockType) || []
+  }
+  
+  return []
 })
 
 const hasBlocks = computed(() => filteredBlocks.value.length > 0)
@@ -142,6 +166,30 @@ function getCategoryName(type: BlockType): string {
 function isBlockSelected(blockId: string): boolean {
   return selectedBlocks.value.has(blockId)
 }
+
+function setActiveTab(tab: BlockType | 'all') {
+  activeTab.value = tab
+}
+
+function getTabDisplayName(tab: BlockType | 'all'): string {
+  if (tab === 'all') return 'All'
+  return BLOCK_CATEGORIES[tab].name
+}
+
+function getTabCount(tab: BlockType | 'all'): number {
+  if (tab === 'all') return filteredBlocks.value.length
+  if (blocksByCategory.value) {
+    return blocksByCategory.value.get(tab as BlockType)?.length || 0
+  }
+  return 0
+}
+
+// Set default tab when available tabs change
+watch(availableTabs, (newTabs) => {
+  if (newTabs.length > 0 && !newTabs.includes(activeTab.value)) {
+    activeTab.value = newTabs[0]
+  }
+}, { immediate: true })
 </script>
 
 <template>
@@ -173,43 +221,47 @@ function isBlockSelected(blockId: string): boolean {
       </div>
     </div>
 
+    <!-- Tab Navigation -->
+    <div 
+      v-if="groupByCategory && availableTabs.length > 1"
+      class="toolbox__tabs"
+    >
+      <button
+        v-for="tab in availableTabs"
+        :key="tab"
+        class="toolbox__tab"
+        :class="{ 'toolbox__tab--active': activeTab === tab }"
+        @click="setActiveTab(tab)"
+      >
+        {{ getTabDisplayName(tab) }}
+        <span class="toolbox__tab-count">{{ getTabCount(tab) }}</span>
+      </button>
+    </div>
+
     <!-- Blocks Container -->
     <div class="toolbox__content">
-      <!-- Grouped by Category -->
+      <!-- Tabbed Layout -->
       <div
-        v-if="groupByCategory && blocksByCategory"
-        class="toolbox__categories"
+        v-if="groupByCategory && activeTabBlocks.length > 0"
+        class="toolbox__blocks"
       >
-        <div
-          v-for="[type, blocks] in blocksByCategory"
-          :key="type"
-          class="toolbox__category"
-        >
-          <div class="toolbox__category-header">
-            <h4>{{ getCategoryName(type) }}</h4>
-            <span class="toolbox__category-count">{{ blocks.length }}</span>
-          </div>
-          
-          <div class="toolbox__category-blocks">
-            <CodeBlock
-              v-for="block in blocks"
-              :key="block.id"
-              :type="block.type"
-              :value="block.value"
-              :disabled="dragDisabled"
-              :class="{
-                'code-block--selected': isBlockSelected(block.id)
-              }"
-              @click="handleBlockClick(block, $event)"
-              @dragstart="handleBlockDragStart(block, $event)"
-            />
-          </div>
-        </div>
+        <CodeBlock
+          v-for="block in activeTabBlocks"
+          :key="block.id"
+          :type="block.type"
+          :value="block.value"
+          :disabled="dragDisabled"
+          :class="{
+            'code-block--selected': isBlockSelected(block.id)
+          }"
+          @click="handleBlockClick(block, $event)"
+          @dragstart="handleBlockDragStart(block, $event)"
+        />
       </div>
 
-      <!-- Flat Layout -->
+      <!-- Flat Layout (when not grouped) -->
       <div
-        v-else-if="hasBlocks"
+        v-else-if="!groupByCategory && hasBlocks"
         class="toolbox__blocks"
       >
         <CodeBlock
@@ -303,50 +355,69 @@ function isBlockSelected(blockId: string): boolean {
   box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.2);
 }
 
+/* Tab Navigation */
+.toolbox__tabs {
+  display: flex;
+  border-bottom: 1px solid #e9ecef;
+  margin-bottom: 12px;
+  flex-shrink: 0;
+  overflow-x: auto;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+
+.toolbox__tabs::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
+}
+
+.toolbox__tab {
+  background: none;
+  border: none;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #6c757d;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.toolbox__tab:hover {
+  color: #495057;
+  background-color: #f8f9fa;
+}
+
+.toolbox__tab--active {
+  color: #007aff;
+  border-bottom-color: #007aff;
+  background-color: #f0f8ff;
+}
+
+.toolbox__tab-count {
+  background-color: #e9ecef;
+  color: #6c757d;
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 10px;
+  min-width: 18px;
+  text-align: center;
+}
+
+.toolbox__tab--active .toolbox__tab-count {
+  background-color: #007aff;
+  color: white;
+}
+
 .toolbox__content {
   flex: 1;
   overflow-y: auto;
   min-height: 0;
 }
 
-.toolbox__categories {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.toolbox__category {
-  background-color: white;
-  border: 1px solid #e9ecef;
-  border-radius: 6px;
-  padding: 12px;
-}
-
-.toolbox__category-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 8px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid #e9ecef;
-}
-
-.toolbox__category-header h4 {
-  margin: 0;
-  font-size: 14px;
-  font-weight: 600;
-  color: #6c757d;
-}
-
-.toolbox__category-count {
-  font-size: 12px;
-  color: #6c757d;
-  background-color: #e9ecef;
-  padding: 2px 6px;
-  border-radius: 12px;
-}
-
-.toolbox__category-blocks,
 .toolbox__blocks {
   display: flex;
   flex-wrap: wrap;

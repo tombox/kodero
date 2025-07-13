@@ -102,6 +102,7 @@ export const AVAILABLE_BLOCKS: readonly CodeBlock[] = [
   { id: 'op-minus', type: 'operator', value: '-' },
   { id: 'op-multiply', type: 'operator', value: '*' },
   { id: 'op-divide', type: 'operator', value: '/' },
+  { id: 'op-modulo', type: 'operator', value: '%' },
   
   // Colors
   { id: 'color-red', type: 'color', value: 'red' },

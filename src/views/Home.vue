@@ -5,7 +5,7 @@ import GameBoard from '../components/GameBoard.vue'
 // Game state
 const currentLevel = ref(1)
 
-// Sample levels data (would come from a level system later)
+// 10 Progressive levels - from basic to advanced
 const levels = ref([
   {
     level: 1,
@@ -17,19 +17,23 @@ const levels = ref([
       ['red', 'red', 'red', 'red', 'red']
     ],
     title: "All Red",
-    description: "Make the entire grid red using: p = red"
+    description: "Fill the entire grid with red color",
+    hint: "Use: p = red",
+    availableBlocks: ['var-p', 'op-assign', 'color-red']
   },
   {
     level: 2,
     goalGrid: [
-      ['blue', 'red', 'blue', 'red', 'blue'],
-      ['red', 'blue', 'red', 'blue', 'red'],
-      ['blue', 'red', 'blue', 'red', 'blue'],
-      ['red', 'blue', 'red', 'blue', 'red'],
-      ['blue', 'red', 'blue', 'red', 'blue']
+      ['red', 'red', 'blue', 'blue', 'blue'],
+      ['red', 'red', 'blue', 'blue', 'blue'],
+      ['red', 'red', 'blue', 'blue', 'blue'],
+      ['red', 'red', 'blue', 'blue', 'blue'],
+      ['red', 'red', 'blue', 'blue', 'blue']
     ],
-    title: "Checkerboard",
-    description: "Create a checkerboard pattern using x and y coordinates"
+    title: "Half and Half",
+    description: "Split the grid: red on left, blue on right",
+    hint: "Use: if x < 2 then p = red else p = blue",
+    availableBlocks: ['ctrl-if', 'var-x', 'op-less', 'num-2', 'var-p', 'op-assign', 'color-red', 'ctrl-else', 'color-blue']
   },
   {
     level: 3,
@@ -40,8 +44,108 @@ const levels = ref([
       ['blue', 'blue', 'red', 'blue', 'blue'],
       ['blue', 'blue', 'red', 'blue', 'blue']
     ],
-    title: "Red Stripe",
-    description: "Create a red vertical stripe in the middle using if statements"
+    title: "Center Stripe",
+    description: "Create a red vertical stripe in the center",
+    hint: "Use: if x == 2 then p = red else p = blue",
+    availableBlocks: ['ctrl-if', 'var-x', 'op-equals', 'num-2', 'var-p', 'op-assign', 'color-red', 'ctrl-else', 'color-blue']
+  },
+  {
+    level: 4,
+    goalGrid: [
+      ['blue', 'blue', 'blue', 'blue', 'blue'],
+      ['blue', 'blue', 'blue', 'blue', 'blue'],
+      ['red', 'red', 'red', 'red', 'red'],
+      ['blue', 'blue', 'blue', 'blue', 'blue'],
+      ['blue', 'blue', 'blue', 'blue', 'blue']
+    ],
+    title: "Center Row",
+    description: "Create a red horizontal stripe in the center",
+    hint: "Use: if y == 2 then p = red else p = blue",
+    availableBlocks: ['ctrl-if', 'var-y', 'op-equals', 'num-2', 'var-p', 'op-assign', 'color-red', 'ctrl-else', 'color-blue']
+  },
+  {
+    level: 5,
+    goalGrid: [
+      ['red', 'blue', 'red', 'blue', 'red'],
+      ['blue', 'red', 'blue', 'red', 'blue'],
+      ['red', 'blue', 'red', 'blue', 'red'],
+      ['blue', 'red', 'blue', 'red', 'blue'],
+      ['red', 'blue', 'red', 'blue', 'red']
+    ],
+    title: "Checkerboard",
+    description: "Create an alternating checkerboard pattern",
+    hint: "Use: if (x + y) % 2 == 0 then p = red else p = blue",
+    availableBlocks: ['ctrl-if', 'var-x', 'op-plus', 'var-y', 'op-modulo', 'num-2', 'op-equals', 'num-0', 'var-p', 'op-assign', 'color-red', 'ctrl-else', 'color-blue']
+  },
+  {
+    level: 6,
+    goalGrid: [
+      ['red', 'red', 'red', 'red', 'red'],
+      ['red', 'blue', 'blue', 'blue', 'red'],
+      ['red', 'blue', 'green', 'blue', 'red'],
+      ['red', 'blue', 'blue', 'blue', 'red'],
+      ['red', 'red', 'red', 'red', 'red']
+    ],
+    title: "Bullseye",
+    description: "Create concentric squares with different colors",
+    hint: "Use nested conditions based on distance from edges",
+    availableBlocks: ['ctrl-if', 'var-x', 'var-y', 'op-equals', 'op-less-equal', 'num-0', 'num-1', 'num-2', 'num-3', 'num-4', 'var-p', 'op-assign', 'color-red', 'color-blue', 'color-green', 'ctrl-else']
+  },
+  {
+    level: 7,
+    goalGrid: [
+      ['blue', 'blue', 'blue', 'blue', 'blue'],
+      ['red', 'blue', 'blue', 'blue', 'blue'],
+      ['red', 'red', 'blue', 'blue', 'blue'],
+      ['red', 'red', 'red', 'blue', 'blue'],
+      ['red', 'red', 'red', 'red', 'blue']
+    ],
+    title: "Triangle",
+    description: "Create a red triangle in the bottom-left",
+    hint: "Use: if x <= y then p = red else p = blue",
+    availableBlocks: ['ctrl-if', 'var-x', 'op-less-equal', 'var-y', 'var-p', 'op-assign', 'color-red', 'ctrl-else', 'color-blue']
+  },
+  {
+    level: 8,
+    goalGrid: [
+      ['red', 'blue', 'red', 'blue', 'red'],
+      ['blue', 'blue', 'blue', 'blue', 'blue'],
+      ['red', 'blue', 'red', 'blue', 'red'],
+      ['blue', 'blue', 'blue', 'blue', 'blue'],
+      ['red', 'blue', 'red', 'blue', 'red']
+    ],
+    title: "Dotted Lines",
+    description: "Create red dots on even rows, blue elsewhere",
+    hint: "Use multiple conditions with && operator",
+    availableBlocks: ['ctrl-if', 'var-x', 'var-y', 'op-modulo', 'num-2', 'op-equals', 'num-0', 'var-p', 'op-assign', 'color-red', 'ctrl-else', 'color-blue']
+  },
+  {
+    level: 9,
+    goalGrid: [
+      ['green', 'blue', 'blue', 'blue', 'green'],
+      ['blue', 'red', 'blue', 'red', 'blue'],
+      ['blue', 'blue', 'red', 'blue', 'blue'],
+      ['blue', 'red', 'blue', 'red', 'blue'],
+      ['green', 'blue', 'blue', 'blue', 'green']
+    ],
+    title: "Complex Pattern",
+    description: "Mix of diagonal and corner patterns",
+    hint: "Combine multiple if-else conditions",
+    availableBlocks: ['ctrl-if', 'var-x', 'var-y', 'op-equals', 'op-plus', 'op-modulo', 'num-0', 'num-1', 'num-2', 'num-3', 'num-4', 'var-p', 'op-assign', 'color-red', 'color-blue', 'color-green', 'ctrl-else']
+  },
+  {
+    level: 10,
+    goalGrid: [
+      ['red', 'blue', 'green', 'blue', 'red'],
+      ['blue', 'green', 'red', 'green', 'blue'],
+      ['green', 'red', 'blue', 'red', 'green'],
+      ['blue', 'green', 'red', 'green', 'blue'],
+      ['red', 'blue', 'green', 'blue', 'red']
+    ],
+    title: "Master Challenge",
+    description: "Complex three-color rotating pattern",
+    hint: "Use modulo arithmetic with multiple colors",
+    availableBlocks: ['ctrl-if', 'var-x', 'var-y', 'op-plus', 'op-minus', 'op-modulo', 'num-0', 'num-1', 'num-2', 'num-3', 'var-p', 'op-assign', 'color-red', 'color-blue', 'color-green', 'ctrl-else']
   }
 ])
 
@@ -79,6 +183,10 @@ function handleLevelRestart(level: number) {
     <GameBoard
       :level="currentLevel"
       :goal-grid="currentLevelData.goalGrid"
+      :level-title="currentLevelData.title"
+      :level-description="currentLevelData.description"
+      :level-hint="currentLevelData.hint"
+      :level-available-blocks="currentLevelData.availableBlocks"
       :grid-size="{ width: 5, height: 5 }"
       @level-complete="handleLevelComplete"
       @level-continue="handleLevelContinue"

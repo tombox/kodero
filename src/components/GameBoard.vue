@@ -13,6 +13,10 @@ interface Props {
   goalGrid?: string[][]
   availableBlocks?: typeof AVAILABLE_BLOCKS
   gridSize?: { width: number; height: number }
+  levelTitle?: string
+  levelDescription?: string
+  levelHint?: string
+  levelAvailableBlocks?: string[]
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -25,7 +29,11 @@ const props = withDefaults(defineProps<Props>(), {
     ['red', 'red', 'red', 'red', 'red']
   ],
   availableBlocks: () => AVAILABLE_BLOCKS,
-  gridSize: () => ({ width: 5, height: 5 })
+  gridSize: () => ({ width: 5, height: 5 }),
+  levelTitle: 'Level',
+  levelDescription: 'Complete the pattern',
+  levelHint: 'Use code blocks to match the goal',
+  levelAvailableBlocks: () => []
 })
 
 // Events
@@ -119,8 +127,14 @@ function nextLevel() {
 
 // Available blocks for the toolbox (filtered for this level)
 const levelBlocks = computed(() => {
-  // For now, show all blocks. Later levels could restrict available blocks
-  return [...props.availableBlocks] // Create a mutable copy
+  // If level has custom available blocks, use those; otherwise use all blocks
+  if (props.levelAvailableBlocks && props.levelAvailableBlocks.length > 0) {
+    // Filter the available blocks to only include the ones specified for this level
+    return props.availableBlocks.filter(block => 
+      props.levelAvailableBlocks!.includes(block.id)
+    )
+  }
+  return [...props.availableBlocks] // Create a mutable copy of all blocks
 })
 
 // Debug: Log current grid state
@@ -133,7 +147,8 @@ console.log('GameBoard goalGrid:', props.goalGrid)
     <!-- Game Header -->
     <header class="game-header">
       <div class="level-info">
-        <h1>Level {{ level }}</h1>
+        <h1>Level {{ level }}: {{ levelTitle }}</h1>
+        <p class="level-description">{{ levelDescription }}</p>
         <div class="progress-info">
           <span class="match-percentage">{{ comparisonResult.matchPercentage }}%</span>
           <span class="cells-matched">{{ comparisonResult.matchingCells }}/{{ comparisonResult.totalCells }}</span>
@@ -184,9 +199,18 @@ console.log('GameBoard goalGrid:', props.goalGrid)
       <!-- Right Panel: Grids -->
       <aside class="grids-panel">
         <div class="grid-section">
-          <div class="panel-header">
-            <h3>Goal</h3>
-            <p>Match this pattern</p>
+          <div class="grid-header">
+            <span class="grid-title">GENERATED PATTERN</span>
+          </div>
+          <CanvasGrid 
+            :grid="canvasGrid"
+            class="canvas-grid"
+          />
+        </div>
+        
+        <div class="grid-section">
+          <div class="grid-header">
+            <span class="grid-title">GOAL</span>
           </div>
           <GoalGrid 
             :key="`goal-${level}`"
@@ -195,21 +219,7 @@ console.log('GameBoard goalGrid:', props.goalGrid)
           />
         </div>
 
-        <div class="grid-section">
-          <div class="panel-header">
-            <h3>Your Result</h3>
-            <p 
-              class="result-status"
-              :class="{ complete: isComplete }"
-            >
-              {{ isComplete ? 'Perfect! 🎉' : 'Keep building...' }}
-            </p>
-          </div>
-          <CanvasGrid 
-            :grid="canvasGrid"
-            class="canvas-grid"
-          />
-        </div>
+        
       </aside>
     </main>
 
@@ -269,10 +279,17 @@ console.log('GameBoard goalGrid:', props.goalGrid)
 }
 
 .level-info h1 {
-  margin: 0;
+  margin: 0 0 0.25rem 0;
   color: #2c3e50;
   font-size: 1.5rem;
   font-weight: 600;
+}
+
+.level-description {
+  margin: 0 0 0.5rem 0;
+  color: #495057;
+  font-size: 1rem;
+  font-style: italic;
 }
 
 .progress-info {
@@ -354,6 +371,16 @@ console.log('GameBoard goalGrid:', props.goalGrid)
   font-size: 0.85rem;
 }
 
+.level-hint {
+  margin-top: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  background-color: #f0f8ff;
+  border: 1px solid #b3d9ff;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  color: #0056b3;
+}
+
 /* Toolbox Panel */
 .toolbox-panel {
   overflow: hidden;
@@ -411,10 +438,27 @@ console.log('GameBoard goalGrid:', props.goalGrid)
   /* Remove flex: 1 to allow natural sizing */
 }
 
-.grid-section .panel-header {
+.grid-section .panel-header,
+.grid-section .grid-header {
   padding: 1rem 1.5rem 0.5rem;
   border-bottom: 1px solid #f1f3f4;
   flex-shrink: 0;
+}
+
+.grid-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #007aff;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.grid-subtitle {
+  margin: 0;
+  color: #6c757d;
+  font-size: 0.85rem;
 }
 
 .result-status {
@@ -429,7 +473,7 @@ console.log('GameBoard goalGrid:', props.goalGrid)
 
 .goal-grid,
 .canvas-grid {
-  padding: 1rem;
+  padding: 0rem;
   display: flex;
   justify-content: center;
   align-items: center;

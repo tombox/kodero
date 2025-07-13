@@ -50,10 +50,6 @@ const hasGoal = computed(() => {
       '--grid-rows': gridDimensions.rows.toString()
     }"
   >
-    <div class="goal-title">
-      Goal
-    </div>
-    
     <div
       v-if="hasGoal"
       class="goal-container"
