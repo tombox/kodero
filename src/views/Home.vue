@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import GameBoard from '../components/GameBoard.vue'
+import { CODE_PATTERNS } from '../utils/codeStructureBuilder'
 
 // Game state
 const currentLevel = ref(1)
@@ -19,7 +20,8 @@ const levels = ref([
     title: "All Red",
     description: "Fill the entire grid with red color",
     hint: "Use: p = red",
-    availableBlocks: ['var-p', 'op-assign', 'color-red']
+    availableBlocks: ['var-p', 'op-assign', 'color-red'],
+    initialCode: CODE_PATTERNS.simpleAssignment()
   },
   {
     level: 2,
@@ -33,7 +35,8 @@ const levels = ref([
     title: "Half and Half",
     description: "Split the grid: red on left, blue on right",
     hint: "Use: if x < 2 then p = red else p = blue",
-    availableBlocks: ['ctrl-if', 'var-x', 'op-less', 'num-2', 'var-p', 'op-assign', 'color-red', 'ctrl-else', 'color-blue']
+    availableBlocks: ['ctrl-if', 'var-x', 'op-less', 'num-2', 'var-p', 'op-assign', 'color-red', 'ctrl-else', 'color-blue'],
+    initialCode: CODE_PATTERNS.ifElseStatement()
   },
   {
     level: 3,
@@ -47,7 +50,8 @@ const levels = ref([
     title: "Center Stripe",
     description: "Create a red vertical stripe in the center",
     hint: "Use: if x == 2 then p = red else p = blue",
-    availableBlocks: ['ctrl-if', 'var-x', 'op-equals', 'num-2', 'var-p', 'op-assign', 'color-red', 'ctrl-else', 'color-blue']
+    availableBlocks: ['ctrl-if', 'var-x', 'op-equals', 'num-2', 'var-p', 'op-assign', 'color-red', 'ctrl-else', 'color-blue'],
+    initialCode: CODE_PATTERNS.centerStripePattern()
   },
   {
     level: 4,
@@ -75,7 +79,8 @@ const levels = ref([
     title: "Checkerboard",
     description: "Create an alternating checkerboard pattern",
     hint: "Use: if (x + y) % 2 == 0 then p = red else p = blue",
-    availableBlocks: ['ctrl-if', 'var-x', 'op-plus', 'var-y', 'op-modulo', 'num-2', 'op-equals', 'num-0', 'var-p', 'op-assign', 'color-red', 'ctrl-else', 'color-blue']
+    availableBlocks: ['ctrl-if', 'var-x', 'op-plus', 'var-y', 'op-modulo', 'num-2', 'op-equals', 'num-0', 'var-p', 'op-assign', 'color-red', 'ctrl-else', 'color-blue'],
+    initialCode: CODE_PATTERNS.checkerboardTemplate()
   },
   {
     level: 6,
@@ -187,6 +192,7 @@ function handleLevelRestart(level: number) {
       :level-description="currentLevelData.description"
       :level-hint="currentLevelData.hint"
       :level-available-blocks="currentLevelData.availableBlocks"
+      :level-initial-code="currentLevelData.initialCode"
       :grid-size="{ width: 5, height: 5 }"
       @level-complete="handleLevelComplete"
       @level-continue="handleLevelContinue"

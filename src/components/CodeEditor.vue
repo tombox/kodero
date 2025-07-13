@@ -41,6 +41,7 @@ const evaluationErrors = ref<any[]>([])
 watch(() => props.template, (newTemplate) => {
   if (newTemplate && !props.structure) {
     editorStructure.value = JSON.parse(JSON.stringify(CODE_TEMPLATES[newTemplate]))
+    evaluationErrors.value = [] // Clear errors on template change
     emit('structure-changed', editorStructure.value)
   }
 })
@@ -49,6 +50,7 @@ watch(() => props.structure, (newStructure) => {
   if (newStructure) {
     try {
       editorStructure.value = JSON.parse(JSON.stringify(newStructure))
+      evaluationErrors.value = [] // Clear errors on structure change
     } catch {
       // Fallback for non-cloneable objects in tests
       editorStructure.value = JSON.parse(JSON.stringify(newStructure))

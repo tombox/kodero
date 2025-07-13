@@ -17,6 +17,7 @@ interface Props {
   levelDescription?: string
   levelHint?: string
   levelAvailableBlocks?: string[]
+  levelInitialCode?: any // Initial code structure for the level
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -187,6 +188,7 @@ console.log('GameBoard goalGrid:', props.goalGrid)
         <CodeEditor
           :key="`level-${level}`"
           template="UNIFIED"
+          :structure="props.levelInitialCode"
           :enable-evaluation="true"
           @structure-changed="handleCodeEditorStructureChanged"
           @code-executed="handleCodeExecuted"
