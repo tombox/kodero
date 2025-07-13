@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import CanvasGrid from '../components/CanvasGrid.vue'
 import GoalGrid from '../components/GoalGrid.vue'
 import CodeBlock from '../components/CodeBlock.vue'
+import CodeSlot from '../components/CodeSlot.vue'
 import Toolbox from '../components/Toolbox.vue'
 import { AVAILABLE_BLOCKS } from '../types/codeBlocks'
 import { getGridComparisonResult } from '../utils/gridComparison'
@@ -48,6 +49,35 @@ function toggleGridCompletion() {
     sampleCanvasGrid.value[0][0] = 'blue'
   }
   comparisonResult.value = getGridComparisonResult(sampleCanvasGrid.value, sampleGoalGrid.value)
+}
+
+// Phase 3 demo state
+const slotBlocks = ref([
+  null, // Empty slot
+  { id: 'demo-1', type: 'variable', value: 'x' }, // Filled slot
+  null, // Empty slot with type restriction
+])
+
+function handleBlockDropped(targetSlotIndex: number, blockData: any) {
+  console.log(`Block dropped: ${blockData.type}(${blockData.value}) -> slot ${targetSlotIndex}`)
+  
+  // Find if this block came from another slot and remove it from there
+  const sourceSlotIndex = slotBlocks.value.findIndex(block => 
+    block && block.id === blockData.id
+  )
+  
+  if (sourceSlotIndex !== -1 && sourceSlotIndex !== targetSlotIndex) {
+    console.log(`✅ Moved block from slot ${sourceSlotIndex} to slot ${targetSlotIndex}`)
+    slotBlocks.value[sourceSlotIndex] = null
+  }
+  
+  // Place the block in the new slot
+  slotBlocks.value[targetSlotIndex] = blockData
+}
+
+function handleBlockRemoved(slotIndex: number, block: any) {
+  console.log(`Block removed from slot ${slotIndex}:`, block)
+  slotBlocks.value[slotIndex] = null
 }
 </script>
 
@@ -153,18 +183,104 @@ function toggleGridCompletion() {
       </div>
     </section>
 
-    <!-- Phase 3: Coming Next -->
+    <!-- Phase 3: Drag & Drop System -->
     <section class="demo-section">
-      <h2>🎯 Phase 3: Drag & Drop System (Coming Next)</h2>
-      <div class="coming-soon">
-        <p>🚧 This section will showcase the drag & drop functionality</p>
-        <p>Features will include:</p>
-        <ul>
-          <li>CodeSlot components for dropping blocks</li>
-          <li>Visual drag feedback and preview</li>
-          <li>Code editor with nested block support</li>
-          <li>Real-time code evaluation</li>
-        </ul>
+      <h2>🎯 Phase 3: Drag & Drop System (In Progress)</h2>
+      
+      <div class="dragdrop-demo">
+        <div class="demo-instruction">
+          <p>✨ <strong>Try it out:</strong> Drag any block from above and drop it into the slots below!</p>
+          <p>📐 <strong>Notice:</strong> All slots maintain fixed sizes whether empty or filled</p>
+          <p>🎛️ Check the browser console to see drag/drop event logs</p>
+        </div>
+        
+        <div class="slots-container">
+          <div class="slot-demo">
+            <h3>Basic Code Slots</h3>
+            <div class="slot-row">
+              <div class="slot-wrapper">
+                <label>Any Block Type:</label>
+                <CodeSlot
+                  :placed-block="slotBlocks[0]"
+                  placeholder="Drop any block here"
+                  @block-dropped="handleBlockDropped(0, $event)"
+                  @block-removed="handleBlockRemoved(0, $event)"
+                />
+              </div>
+              
+              <div class="slot-wrapper">
+                <label>Pre-filled Slot:</label>
+                <CodeSlot
+                  :placed-block="slotBlocks[1]"
+                  placeholder="Drop any block here"
+                  @block-dropped="handleBlockDropped(1, $event)"
+                  @block-removed="handleBlockRemoved(1, $event)"
+                />
+              </div>
+              
+              <div class="slot-wrapper">
+                <label>Numbers Only:</label>
+                <CodeSlot
+                  :placed-block="slotBlocks[2]"
+                  :accepted-types="['number']"
+                  :show-type-indicator="true"
+                  placeholder="Numbers only"
+                  @block-dropped="handleBlockDropped(2, $event)"
+                  @block-removed="handleBlockRemoved(2, $event)"
+                />
+              </div>
+            </div>
+          </div>
+          
+          <div class="slot-demo">
+            <h3>Size Variants</h3>
+            <div class="slot-row">
+              <div class="slot-wrapper">
+                <label>Small:</label>
+                <CodeSlot
+                  size="small"
+                  placeholder="Small slot"
+                />
+              </div>
+              
+              <div class="slot-wrapper">
+                <label>Medium:</label>
+                <CodeSlot
+                  size="medium"
+                  placeholder="Medium slot"
+                />
+              </div>
+              
+              <div class="slot-wrapper">
+                <label>Large:</label>
+                <CodeSlot
+                  size="large"
+                  placeholder="Large slot"
+                />
+              </div>
+            </div>
+          </div>
+          
+          <div class="slot-demo">
+            <h3>Disabled State</h3>
+            <div class="slot-row">
+              <CodeSlot
+                disabled
+                placeholder="This slot is disabled"
+              />
+            </div>
+          </div>
+        </div>
+        
+        <div class="coming-soon">
+          <p>🚧 <strong>Still to come:</strong></p>
+          <ul>
+            <li>CodeEditor component with nested slot support</li>
+            <li>Real-time code evaluation and grid updates</li>
+            <li>Advanced drag feedback and animations</li>
+            <li>Keyboard accessibility for drag operations</li>
+          </ul>
+        </div>
       </div>
     </section>
 
@@ -338,6 +454,66 @@ function toggleGridCompletion() {
   margin: 0.25rem;
 }
 
+/* Drag & Drop Demo Styles */
+.dragdrop-demo {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.demo-instruction {
+  text-align: center;
+  padding: 1.5rem;
+  background-color: #e3f2fd;
+  border-radius: 8px;
+  border: 1px solid #bbdefb;
+}
+
+.demo-instruction p {
+  margin: 0.5rem 0;
+  color: #1565c0;
+}
+
+.slots-container {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.slot-demo {
+  background-color: white;
+  padding: 1.5rem;
+  border-radius: 8px;
+  border: 1px solid #dee2e6;
+}
+
+.slot-demo h3 {
+  margin: 0 0 1rem 0;
+  color: #495057;
+  font-size: 1.1rem;
+}
+
+.slot-row {
+  display: flex;
+  gap: 1.5rem;
+  align-items: end;
+  flex-wrap: wrap;
+}
+
+.slot-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.slot-wrapper label {
+  font-size: 0.9rem;
+  color: #6c757d;
+  font-weight: 500;
+  text-align: center;
+}
+
 /* Coming Soon Styles */
 .coming-soon {
   text-align: center;
@@ -404,6 +580,17 @@ function toggleGridCompletion() {
   
   .block-showcase {
     grid-template-columns: 1fr;
+  }
+  
+  .slot-row {
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+  }
+  
+  .slot-wrapper {
+    width: 100%;
+    max-width: 200px;
   }
 }
 </style>

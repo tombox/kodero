@@ -13,7 +13,7 @@ describe('Home - Development Playground', () => {
     expect(wrapper.text()).toContain('Kodero Development Playground')
     expect(wrapper.text()).toContain('Phase 1: Grid System (Completed)')
     expect(wrapper.text()).toContain('Phase 2: Code Block System (Completed)')
-    expect(wrapper.text()).toContain('Phase 3: Drag & Drop System (Coming Next)')
+    expect(wrapper.text()).toContain('Phase 3: Drag & Drop System (In Progress)')
   })
 
   it('should have interactive grid completion toggle', () => {
