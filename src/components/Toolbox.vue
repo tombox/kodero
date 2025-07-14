@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, ref, watch, onUnmounted } from 'vue'
 import CodeBlock from './CodeBlock.vue'
 import type { CodeBlock as CodeBlockType, BlockType } from '../types/codeBlocks'
 import { BLOCK_CATEGORIES } from '../types/codeBlocks'
@@ -36,6 +36,7 @@ const emit = defineEmits<{
 const searchTerm = ref('')
 const selectedBlocks = ref<Set<string>>(new Set())
 const activeTab = ref<BlockType | 'all'>('all')
+const isMobile = ref(false)
 
 // Computed properties
 const filteredBlocks = computed(() => {
@@ -159,9 +160,6 @@ function handleSearchInput() {
   emit('blocks-filter', filteredBlocks.value)
 }
 
-function getCategoryName(type: BlockType): string {
-  return BLOCK_CATEGORIES[type].name
-}
 
 function isBlockSelected(blockId: string): boolean {
   return selectedBlocks.value.has(blockId)
@@ -190,6 +188,24 @@ watch(availableTabs, (newTabs) => {
     activeTab.value = newTabs[0]
   }
 }, { immediate: true })
+
+// Handle responsive behavior
+function checkMobile() {
+  isMobile.value = window.innerWidth <= 768
+}
+
+// Set up responsive listener
+if (typeof window !== 'undefined') {
+  checkMobile()
+  window.addEventListener('resize', checkMobile)
+}
+
+// Clean up on unmount
+onUnmounted(() => {
+  if (typeof window !== 'undefined') {
+    window.removeEventListener('resize', checkMobile)
+  }
+})
 </script>
 
 <template>
@@ -221,9 +237,9 @@ watch(availableTabs, (newTabs) => {
       </div>
     </div>
 
-    <!-- Tab Navigation -->
+    <!-- Tab Navigation (Mobile) -->
     <div 
-      v-if="groupByCategory && availableTabs.length > 1"
+      v-if="groupByCategory && availableTabs.length > 1 && isMobile"
       class="toolbox__tabs"
     >
       <button
@@ -240,9 +256,9 @@ watch(availableTabs, (newTabs) => {
 
     <!-- Blocks Container -->
     <div class="toolbox__content">
-      <!-- Tabbed Layout -->
+      <!-- Mobile Tabbed Layout -->
       <div
-        v-if="groupByCategory && activeTabBlocks.length > 0"
+        v-if="groupByCategory && activeTabBlocks.length > 0 && isMobile"
         class="toolbox__blocks"
       >
         <CodeBlock
@@ -257,6 +273,37 @@ watch(availableTabs, (newTabs) => {
           @click="handleBlockClick(block, $event)"
           @dragstart="handleBlockDragStart(block, $event)"
         />
+      </div>
+
+      <!-- Desktop Stacked Layout -->
+      <div
+        v-else-if="groupByCategory && blocksByCategory && !isMobile"
+        class="toolbox__categories"
+      >
+        <div
+          v-for="[category, blocks] in blocksByCategory"
+          :key="category"
+          class="toolbox__category"
+        >
+          <h4 class="toolbox__category-title">
+            {{ BLOCK_CATEGORIES[category].name }}
+            <span class="toolbox__category-count">{{ blocks.length }}</span>
+          </h4>
+          <div class="toolbox__category-blocks">
+            <CodeBlock
+              v-for="block in blocks"
+              :key="block.id"
+              :type="block.type"
+              :value="block.value"
+              :disabled="dragDisabled"
+              :class="{
+                'code-block--selected': isBlockSelected(block.id)
+              }"
+              @click="handleBlockClick(block, $event)"
+              @dragstart="handleBlockDragStart(block, $event)"
+            />
+          </div>
+        </div>
       </div>
 
       <!-- Flat Layout (when not grouped) -->
@@ -311,7 +358,6 @@ watch(availableTabs, (newTabs) => {
   border-radius: 8px;
   padding: 16px;
   min-height: 200px;
-  max-height: 400px;
   overflow: hidden;
 }
 
@@ -355,7 +401,7 @@ watch(availableTabs, (newTabs) => {
   box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.2);
 }
 
-/* Tab Navigation */
+/* Tab Navigation (Mobile) */
 .toolbox__tabs {
   display: flex;
   border-bottom: 1px solid #e9ecef;
@@ -410,6 +456,47 @@ watch(availableTabs, (newTabs) => {
 .toolbox__tab--active .toolbox__tab-count {
   background-color: #007aff;
   color: white;
+}
+
+/* Desktop Categories (Stacked) */
+.toolbox__categories {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.toolbox__category {
+  background-color: #ffffff;
+  border: 1px solid #e9ecef;
+  border-radius: 6px;
+  padding: 12px;
+}
+
+.toolbox__category-title {
+  margin: 0 0 8px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #495057;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.toolbox__category-count {
+  background-color: #e9ecef;
+  color: #6c757d;
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 10px;
+  min-width: 18px;
+  text-align: center;
+  font-weight: 500;
+}
+
+.toolbox__category-blocks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
 }
 
 .toolbox__content {

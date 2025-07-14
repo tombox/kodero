@@ -153,7 +153,7 @@ describe('Parser + Evaluator Integration', () => {
       const parseResult = parser.parse(structure)
       expect(parseResult.success).toBe(false)
       expect(parseResult.errors).toHaveLength(1)
-      expect(parseResult.errors[0].line).toBe(0)
+      expect(parseResult.errors[0].line).toBe(1)
 
       // Even with parse errors, we can still evaluate what was successfully parsed
       if (parseResult.ast) {

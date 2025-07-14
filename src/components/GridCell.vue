@@ -7,9 +7,6 @@ const { color = '' } = defineProps<Props>()
 
 // Use gray as fallback for empty cells
 const displayColor = (color && color.trim() !== '') ? color : '#f0f0f0'
-console.log('GridCell: color prop =', JSON.stringify(color), 'displayColor =', displayColor)
-console.log('GridCell: color truthy?', !!color, 'color length:', color?.length)
-console.log('GridCell: empty class will be applied:', !color || color.trim() === '')
 </script>
 
 <template>

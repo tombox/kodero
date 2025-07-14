@@ -119,6 +119,9 @@ export const CODE_PATTERNS = {
       parentLineId: elseLine.id
     })
     
+    // Set up parent relationships for else block
+    elseLine.parentLineId = ifLine.id
+    
     return createCodeStructure([ifLine, thenLine, elseLine, elseBodyLine])
   },
   

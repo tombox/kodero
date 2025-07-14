@@ -370,7 +370,7 @@ describe('CodeParser', () => {
 
       expect(result.success).toBe(false)
       expect(result.errors).toHaveLength(1)
-      expect(result.errors[0].line).toBe(1) // Second line (0-indexed)
+      expect(result.errors[0].line).toBe(2) // Second line (0-indexed becomes 1-based)
     })
 
     it('should add location info to AST nodes', () => {

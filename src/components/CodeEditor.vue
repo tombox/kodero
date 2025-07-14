@@ -4,7 +4,9 @@ import CodeSlot from './CodeSlot.vue'
 import type { CodeStructure, CodeLine, CodeTemplateKey } from '../types/codeStructures'
 import { CODE_TEMPLATES } from '../types/codeStructures'
 import type { CodeBlock } from '../types/codeBlocks'
+import { AVAILABLE_BLOCKS } from '../types/codeBlocks'
 import { evaluationService } from '../evaluation'
+import type { CodeEditorSnapshot, CodeLineSnapshot } from '../types/codeEditorSnapshot'
 
 interface Props {
   template?: CodeTemplateKey
@@ -411,6 +413,124 @@ function executeCode() {
   }
 }
 
+// Export current editor state to JSON format
+function exportToJson(metadata?: { name?: string; description?: string }): CodeEditorSnapshot {
+  const snapshot: CodeEditorSnapshot = {
+    version: "1.0",
+    metadata: {
+      ...metadata,
+      created: new Date().toISOString()
+    },
+    structure: {
+      lines: editorStructure.value.lines.map((line): CodeLineSnapshot => ({
+        id: line.id,
+        type: line.type,
+        indentLevel: line.indentLevel,
+        parentLineId: line.parentLineId || null,
+        slots: line.placedBlocks.map((block) => {
+          if (!block) {
+            return { blockId: null, isBlank: false }
+          }
+          
+          // Find the original block ID by matching type and value
+          const originalBlock = AVAILABLE_BLOCKS.find(original => 
+            original.type === block.type && original.value === block.value
+          )
+          
+          return {
+            blockId: originalBlock?.id || null,
+            isBlank: false
+          }
+        })
+      }))
+    }
+  }
+  
+  return snapshot
+}
+
+// Export to console (for sandbox mode)
+function exportToConsole(metadata?: { name?: string; description?: string }) {
+  const snapshot = exportToJson(metadata)
+  
+  try {
+    if (typeof console !== 'undefined' && console.log) {
+      console.log('📋 Code Editor Snapshot:')
+      console.log(JSON.stringify(snapshot, null, 2))
+      console.log('💡 Copy the above JSON to use as initialCode in level definition!')
+    }
+  } catch (error) {
+    // Silently handle console errors
+  }
+  
+  return snapshot
+}
+
+// Import from JSON format and load into editor
+function importFromJson(snapshot: CodeEditorSnapshot) {
+  try {
+    // Convert snapshot back to CodeStructure format
+    const structure: CodeStructure = {
+      id: `structure-${Date.now()}`,
+      type: 'linear',
+      lines: snapshot.structure.lines.map((lineSnapshot): CodeLine => {
+        // Create slots and placed blocks - ensure minimum 3 slots
+        const minSlots = Math.max(lineSnapshot.slots.length, 3)
+        const slots = Array.from({ length: minSlots }, (_, index) => ({
+          id: `slot-${index}`,
+          placeholder: 'drop here'
+        }))
+        
+        const placedBlocks = Array.from({ length: minSlots }, (_, index) => {
+          const slotData = lineSnapshot.slots[index]
+          if (!slotData || !slotData.blockId || slotData.isBlank) {
+            return null
+          }
+          
+          // Find the original block from AVAILABLE_BLOCKS
+          const originalBlock = AVAILABLE_BLOCKS.find(block => block.id === slotData.blockId)
+          
+          if (!originalBlock) {
+            console.warn(`Block not found in AVAILABLE_BLOCKS: ${slotData.blockId}`)
+            return null
+          }
+          
+          return {
+            ...originalBlock,
+            id: `placed-${lineSnapshot.id}-${index}-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`
+          }
+        })
+        
+        return {
+          id: lineSnapshot.id,
+          type: lineSnapshot.type,
+          indentLevel: lineSnapshot.indentLevel,
+          parentLineId: lineSnapshot.parentLineId || undefined,
+          slots,
+          placedBlocks,
+          minSlots: slots.length,
+          maxSlots: 10
+        }
+      })
+    }
+    
+    editorStructure.value = structure
+    evaluationErrors.value = []
+    emit('structure-changed', editorStructure.value)
+    
+    console.log('✅ Successfully imported code structure from JSON')
+    
+    // Execute code if evaluation is enabled
+    if (props.enableEvaluation) {
+      executeCode()
+    }
+    
+  } catch (error) {
+    console.error('❌ Failed to import code structure:', error)
+    throw new Error(`Import failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
+  }
+}
+
 // Expose functions for external access (tests, etc.)
 defineExpose({
   executeCode,
@@ -418,7 +538,10 @@ defineExpose({
   handleBlockRemoved,
   addLine,
   removeLine,
-  allLines
+  allLines,
+  exportToJson,
+  exportToConsole,
+  importFromJson
 })
 </script>
 

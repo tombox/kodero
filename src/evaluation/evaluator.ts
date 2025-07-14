@@ -8,7 +8,6 @@
 import type { 
   ProgramNode, 
   AssignmentNode, 
-  LiteralNode, 
   VariableNode, 
   ASTNode,
   ConditionalNode,
@@ -145,7 +144,7 @@ export class CodeEvaluator {
       return Boolean(value)
     }
     
-    throw new Error(`Unknown condition type: ${condition.type}`)
+    throw new Error(`Unknown condition type: ${(condition as any).type}`)
   }
 
   /**

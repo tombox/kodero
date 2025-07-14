@@ -10,11 +10,28 @@ import { RouterView } from 'vue-router'
   </div>
 </template>
 
+<style>
+/* Import Google Font - Capriola */
+@import url('https://fonts.googleapis.com/css2?family=Capriola&display=swap');
+
+/* Global font styles */
+* {
+  font-family: 'Capriola', sans-serif;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Capriola', sans-serif;
+}
+</style>
+
 <style scoped>
 #app {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  font-family: 'Capriola', sans-serif;
 }
 
 header {

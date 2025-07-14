@@ -57,6 +57,11 @@ export class CodeParser {
       body: statements
     }
 
+    // Debug: Print AST tree
+    if (success && ast) {
+      console.log('🌳 AST Tree:', JSON.stringify(ast, null, 2))
+    }
+
     return {
       success,
       ast: success ? ast : undefined,
@@ -156,6 +161,7 @@ export class CodeParser {
       
       // Check if this line is an else statement
       const blocks = line.placedBlocks.filter((block): block is CodeBlock => block !== null)
+      
       if (blocks.length > 0 && blocks[0].type === 'control' && blocks[0].value === 'else') {
         // Check if it's at the same level (has same parent) as the if statement
         if (line.parentLineId === ifLine.parentLineId) {
@@ -230,20 +236,6 @@ export class CodeParser {
     )
   }
 
-  /**
-   * Check if blocks represent an assignment pattern: variable = value
-   */
-  private isAssignmentPattern(blocks: CodeBlock[]): boolean {
-    return (
-      blocks.length === 3 &&
-      blocks[0].type === 'variable' &&
-      blocks[1].type === 'operator' &&
-      blocks[1].value === '=' &&
-      (blocks[2].type === 'variable' || 
-       blocks[2].type === 'color' || 
-       blocks[2].type === 'number')
-    )
-  }
 
   /**
    * Parse an assignment pattern into an AssignmentNode
@@ -288,7 +280,7 @@ export class CodeParser {
   /**
    * Parse a conditional pattern into a ConditionalNode
    */
-  private parseConditional(blocks: CodeBlock[], lineIndex: number, line: CodeLine): ConditionalNode {
+  private parseConditional(blocks: CodeBlock[], lineIndex: number, _line: CodeLine): ConditionalNode {
     // Basic validation: if <variable> <operator> <value>
     if (blocks.length < 4) {
       throw new Error('Invalid if condition: expected format "if variable operator value"')

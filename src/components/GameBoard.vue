@@ -20,6 +20,9 @@ interface Props {
   levelInitialCode?: any // Initial code structure for the level
 }
 
+// Refs
+const codeEditorRef = ref<any>(null)
+
 const props = withDefaults(defineProps<Props>(), {
   level: 1,
   goalGrid: () => [
@@ -141,6 +144,24 @@ const levelBlocks = computed(() => {
 // Debug: Log current grid state
 console.log('GameBoard mounted with canvasGrid:', canvasGrid.value)
 console.log('GameBoard goalGrid:', props.goalGrid)
+
+// Global export function for sandbox mode
+function exportCodeStructure(name?: string) {
+  if (codeEditorRef.value) {
+    return codeEditorRef.value.exportToConsole({ 
+      name: name || `Level ${props.level} Structure`,
+      description: `${props.levelTitle}: ${props.levelDescription}`
+    })
+  } else {
+    console.error('❌ Code editor not available for export')
+  }
+}
+
+// Make export function globally available in development
+if (typeof window !== 'undefined') {
+  ;(window as any).exportCodeStructure = exportCodeStructure
+  console.log('🌟 Sandbox mode: Use exportCodeStructure("MyLevel") to export current editor state!')
+}
 </script>
 
 <template>
@@ -186,6 +207,7 @@ console.log('GameBoard goalGrid:', props.goalGrid)
           <p>Build your pattern here</p>
         </div>
         <CodeEditor
+          ref="codeEditorRef"
           :key="`level-${level}`"
           template="UNIFIED"
           :structure="props.levelInitialCode"
