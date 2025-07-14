@@ -36,7 +36,7 @@ export const CODE_TEMPLATES = {
         type: 'expression' as const,
         indentLevel: 0,
         slots: [
-          { id: 'slot-0', placeholder: 'drop here' }
+          { id: 'slot-0', placeholder: '' }
         ],
         placedBlocks: [null],
         minSlots: 1,

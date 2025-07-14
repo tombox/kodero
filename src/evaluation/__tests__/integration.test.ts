@@ -244,7 +244,7 @@ function createTestLine(blocks: Partial<CodeBlock>[], lineIndex = 0): CodeLine {
     indentLevel: 0,
     slots: fullBlocks.map((_, index) => ({
       id: `slot-${index}`,
-      placeholder: 'drop here'
+      placeholder: ''
     })),
     placedBlocks: fullBlocks,
     minSlots: 1,

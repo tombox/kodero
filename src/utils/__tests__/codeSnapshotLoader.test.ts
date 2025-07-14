@@ -1,11 +1,10 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect } from 'vitest'
 import { 
   snapshotToCodeStructure, 
   loadLevelFromSnapshot, 
   EXAMPLE_IF_ELSE_SNAPSHOT 
 } from '../codeSnapshotLoader'
 import type { CodeEditorSnapshot } from '../../types/codeEditorSnapshot'
-import type { CodeStructure } from '../../types/codeStructures'
 
 describe('Code Snapshot Loader', () => {
   
@@ -42,9 +41,9 @@ describe('Code Snapshot Loader', () => {
             indentLevel: 0,
             parentLineId: undefined,
             slots: [
-              { id: 'slot-0', placeholder: 'drop here' },
-              { id: 'slot-1', placeholder: 'drop here' },
-              { id: 'slot-2', placeholder: 'drop here' }
+              { id: 'slot-0', placeholder: '' },
+              { id: 'slot-1', placeholder: '' },
+              { id: 'slot-2', placeholder: '' }
             ],
             placedBlocks: [
               expect.objectContaining({

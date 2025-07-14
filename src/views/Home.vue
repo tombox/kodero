@@ -225,9 +225,9 @@ const sandboxConfig = {
         indentLevel: 0,
         parentLineId: undefined,
         slots: [
-          { id: 'slot-0', placeholder: 'drop here' },
-          { id: 'slot-1', placeholder: 'drop here' },
-          { id: 'slot-2', placeholder: 'drop here' }
+          { id: 'slot-0', placeholder: '' },
+          { id: 'slot-1', placeholder: '' },
+          { id: 'slot-2', placeholder: '' }
         ],
         placedBlocks: [null, null, null],
         minSlots: 3,

@@ -30,9 +30,9 @@ describe('CodeEditor Export Functionality', () => {
             indentLevel: 0,
             parentLineId: undefined,
             slots: [
-              { id: 'slot-0', placeholder: 'drop here' },
-              { id: 'slot-1', placeholder: 'drop here' },
-              { id: 'slot-2', placeholder: 'drop here' }
+              { id: 'slot-0', placeholder: '' },
+              { id: 'slot-1', placeholder: '' },
+              { id: 'slot-2', placeholder: '' }
             ],
             placedBlocks: [
               { id: 'placed-var-p-123', type: 'variable', value: 'p' },
@@ -102,9 +102,9 @@ describe('CodeEditor Export Functionality', () => {
             indentLevel: 0,
             parentLineId: undefined,
             slots: [
-              { id: 'slot-0', placeholder: 'drop here' },
-              { id: 'slot-1', placeholder: 'drop here' },
-              { id: 'slot-2', placeholder: 'drop here' }
+              { id: 'slot-0', placeholder: '' },
+              { id: 'slot-1', placeholder: '' },
+              { id: 'slot-2', placeholder: '' }
             ],
             placedBlocks: [
               { id: 'placed-var-p-123', type: 'variable', value: 'p' },
@@ -140,10 +140,10 @@ describe('CodeEditor Export Functionality', () => {
             indentLevel: 0,
             parentLineId: undefined,
             slots: [
-              { id: 'slot-0', placeholder: 'drop here' },
-              { id: 'slot-1', placeholder: 'drop here' },
-              { id: 'slot-2', placeholder: 'drop here' },
-              { id: 'slot-3', placeholder: 'drop here' }
+              { id: 'slot-0', placeholder: '' },
+              { id: 'slot-1', placeholder: '' },
+              { id: 'slot-2', placeholder: '' },
+              { id: 'slot-3', placeholder: '' }
             ],
             placedBlocks: [
               { id: 'placed-ctrl-if-123', type: 'control', value: 'if' },
@@ -160,9 +160,9 @@ describe('CodeEditor Export Functionality', () => {
             indentLevel: 1,
             parentLineId: 'line-if',
             slots: [
-              { id: 'slot-0', placeholder: 'drop here' },
-              { id: 'slot-1', placeholder: 'drop here' },
-              { id: 'slot-2', placeholder: 'drop here' }
+              { id: 'slot-0', placeholder: '' },
+              { id: 'slot-1', placeholder: '' },
+              { id: 'slot-2', placeholder: '' }
             ],
             placedBlocks: [
               { id: 'placed-var-p-345', type: 'variable', value: 'p' },
@@ -178,7 +178,7 @@ describe('CodeEditor Export Functionality', () => {
             indentLevel: 0,
             parentLineId: 'line-if',
             slots: [
-              { id: 'slot-0', placeholder: 'drop here' }
+              { id: 'slot-0', placeholder: '' }
             ],
             placedBlocks: [
               { id: 'placed-ctrl-else-234', type: 'control', value: 'else' }
@@ -192,9 +192,9 @@ describe('CodeEditor Export Functionality', () => {
             indentLevel: 1,
             parentLineId: 'line-else',
             slots: [
-              { id: 'slot-0', placeholder: 'drop here' },
-              { id: 'slot-1', placeholder: 'drop here' },
-              { id: 'slot-2', placeholder: 'drop here' }
+              { id: 'slot-0', placeholder: '' },
+              { id: 'slot-1', placeholder: '' },
+              { id: 'slot-2', placeholder: '' }
             ],
             placedBlocks: [
               { id: 'placed-var-p-567', type: 'variable', value: 'p' },
@@ -259,7 +259,7 @@ describe('CodeEditor Export Functionality', () => {
             type: 'assignment',
             indentLevel: 0,
             parentLineId: undefined,
-            slots: [{ id: 'slot-0', placeholder: 'drop here' }],
+            slots: [{ id: 'slot-0', placeholder: '' }],
             placedBlocks: [
               { id: 'unknown-block-123', type: 'unknown' as any, value: 'mystery' }
             ] as CodeBlock[],

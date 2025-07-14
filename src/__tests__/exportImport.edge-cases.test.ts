@@ -50,8 +50,8 @@ describe('Export/Import Edge Cases and Error Scenarios', () => {
             indentLevel: 0,
             parentLineId: undefined,
             slots: [
-              { id: 'slot-0', placeholder: 'drop here' },
-              { id: 'slot-1', placeholder: 'drop here' }
+              { id: 'slot-0', placeholder: '' },
+              { id: 'slot-1', placeholder: '' }
             ],
             placedBlocks: [], // Empty array
             minSlots: 2,
@@ -76,8 +76,8 @@ describe('Export/Import Edge Cases and Error Scenarios', () => {
             indentLevel: 0,
             parentLineId: undefined,
             slots: [
-              { id: 'slot-0', placeholder: 'drop here' },
-              { id: 'slot-1', placeholder: 'drop here' }
+              { id: 'slot-0', placeholder: '' },
+              { id: 'slot-1', placeholder: '' }
             ],
             placedBlocks: [null, null],
             minSlots: 2,
@@ -104,7 +104,7 @@ describe('Export/Import Edge Cases and Error Scenarios', () => {
             type: 'assignment',
             indentLevel: 0,
             parentLineId: undefined,
-            slots: [{ id: 'slot-0', placeholder: 'drop here' }],
+            slots: [{ id: 'slot-0', placeholder: '' }],
             placedBlocks: [
               { id: 'malformed-block', type: undefined, value: undefined } as any
             ],
@@ -132,7 +132,7 @@ describe('Export/Import Edge Cases and Error Scenarios', () => {
           type: 'assignment' as const,
           indentLevel: i, // Increasing indent levels
           parentLineId: i > 0 ? `line-${i - 1}` : undefined,
-          slots: [{ id: `slot-${i}-0`, placeholder: 'drop here' }],
+          slots: [{ id: `slot-${i}-0`, placeholder: '' }],
           placedBlocks: [
             { id: `block-${i}`, type: 'variable' as const, value: 'p' }
           ],

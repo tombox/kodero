@@ -84,7 +84,7 @@ describe('CodeEditor', () => {
       const codeSlots = wrapper.findAllComponents(CodeSlot)
       expect(codeSlots).toHaveLength(1) // starts with one slot
       
-      expect(codeSlots[0].props('placeholder')).toBe('drop here')
+      expect(codeSlots[0].props('placeholder')).toBe('')
     })
 
     it('should support auto-indenting when control blocks are added', () => {

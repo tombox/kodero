@@ -34,7 +34,7 @@ export function createCodeLine(
   // Create slots and placed blocks
   const slots = blocks.map((_, index) => ({
     id: `slot-${index}`,
-    placeholder: 'drop here'
+    placeholder: ''
   }))
   
   const placedBlocks = blocks.map(blockId => 

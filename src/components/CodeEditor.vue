@@ -123,7 +123,7 @@ function handleBlockDropped(lineId: string, slotIndex: number, blockData: CodeBl
     const newSlotIndex = line.slots.length
     line.slots.push({
       id: `slot-${newSlotIndex}`,
-      placeholder: 'drop here'
+      placeholder: ''
     })
     line.placedBlocks.push(null)
     console.log(`Auto-added slot ${newSlotIndex} to line ${lineId}`)
@@ -478,7 +478,7 @@ function importFromJson(snapshot: CodeEditorSnapshot) {
         const minSlots = Math.max(lineSnapshot.slots.length, 3)
         const slots = Array.from({ length: minSlots }, (_, index) => ({
           id: `slot-${index}`,
-          placeholder: 'drop here'
+          placeholder: ''
         }))
         
         const placedBlocks = Array.from({ length: minSlots }, (_, index) => {

@@ -4,7 +4,7 @@
  */
 
 import type { CodeStructure, CodeLine } from '../types/codeStructures'
-import type { CodeEditorSnapshot, CodeLineSnapshot } from '../types/codeEditorSnapshot'
+import type { CodeEditorSnapshot } from '../types/codeEditorSnapshot'
 import type { CodeBlock } from '../types/codeBlocks'
 import { AVAILABLE_BLOCKS } from '../types/codeBlocks'
 
@@ -17,12 +17,12 @@ export function snapshotToCodeStructure(snapshot: CodeEditorSnapshot): CodeStruc
   const structure: CodeStructure = {
     id: `structure-${Date.now()}`,
     type: 'linear',
-    lines: snapshot.structure.lines.map((lineSnapshot, lineIndex): CodeLine => {
+    lines: snapshot.structure.lines.map((lineSnapshot): CodeLine => {
       // Create slots based on the number of blocks (not including blanks)
       const totalSlots = Math.max(lineSnapshot.slots.length, 3) // Minimum 3 slots
       const slots = Array.from({ length: totalSlots }, (_, index) => ({
         id: `slot-${index}`,
-        placeholder: 'drop here'
+        placeholder: ''
       }))
       
       // Create placed blocks, respecting blank slots
